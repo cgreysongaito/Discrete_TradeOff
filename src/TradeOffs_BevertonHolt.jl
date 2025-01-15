@@ -16,8 +16,6 @@ function calc_m(para)
     return m
 end
 
-calc_m(BevHoltPar())
-
 function BevertonHolt_model(Ndata, t, para)
     @unpack α,β,a,b,K,p,τ = para
         return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (a-b*exp(-K*(τ+1)))*(p^(τ+1))*Ndata[t-τ]
@@ -33,8 +31,34 @@ function BevertonHolt_recursion(N0,time,para)
     return N[τ+1:end]
 end
 
+#Question what is the history before t=0?
+
 let 
     time = 500
-    timeseries = BevertonHolt_recursion(0.1,time,BevHoltPar(τ=2,p=0.55))
-    plot(0:1:time,timeseries)
+    timeseries = BevertonHolt_recursion(0.1,time,BevHoltPar(τ=1,p=0.55))
+    # plot(0:1:time,timeseries)
+    return timeseries
 end
+
+function BevertonHolt_τbifurc(τrange, pval)
+    data= zeros(length(τrange))
+    @threads for i in eachindex(τrange)
+        timeseries = BevertonHolt_recursion(0.1,500,BevHoltPar(τ=τrange[i],p=pval))
+        data[i] = timeseries[end-50]
+    end
+    return data
+end
+
+let     
+    τrange = 2:1:7
+    bifurcdata_p55 = BevertonHolt_τbifurc(τrange,0.55)
+    bifurcdata_p5 = BevertonHolt_τbifurc(τrange,0.5)
+    bifurcdata_p45 = BevertonHolt_τbifurc(τrange,0.45)
+    scatter(τrange,bifurcdata_p55, label="p=0.55")
+    scatter!(τrange,bifurcdata_p5, label="p=0.5")
+    scatter!(τrange,bifurcdata_p45, label="p=0.45")
+    xlabel!("τ")
+    ylabel!("N")
+end
+
+#issue with p=0.55 and τ=1 - shoots off to infinity
