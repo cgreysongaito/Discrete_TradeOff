@@ -58,3 +58,9 @@ let
     xlabel!("τ")
     ylabel!("N")
 end
+
+#Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
+#TODO
+
+#Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)
+#TODO

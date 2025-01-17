@@ -16,6 +16,8 @@ function calc_m(para)
     return m
 end
 
+
+#
 function BevertonHolt_model(Ndata, t, para)
     @unpack α,β,a,b,K,p,τ = para
         return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (a-b*exp(-K*(τ+1)))*(p^(τ+1))*Ndata[t-τ]
@@ -36,8 +38,8 @@ end
 let 
     time = 500
     timeseries = BevertonHolt_recursion(0.1,time,BevHoltPar(τ=1,p=0.55))
-    # plot(0:1:time,timeseries)
-    return timeseries
+    plot(0:1:time,timeseries)
+    # return timeseries
 end
 
 function BevertonHolt_τbifurc(τrange, pval)
@@ -62,3 +64,9 @@ let
 end
 
 #issue with p=0.55 and τ=1 - shoots off to infinity
+
+#Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
+#TODO
+
+#Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)
+#TODO
