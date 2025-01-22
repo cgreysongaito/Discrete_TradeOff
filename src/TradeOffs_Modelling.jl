@@ -8,6 +8,7 @@ function calc_m(para)
     return m
 end
 
+#Density independent survival of immature individuals
 function BevertonHolt_model(Ndata, t, para)
     @unpack α,β,a,b,K,p,τ = para
         return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (a-b*exp(-K*(τ+1)))*(p^(τ+1))*Ndata[t-τ]
@@ -34,8 +35,20 @@ let
     ylabel!("N")
 end
 
+#Code max 0 or equilibrium point for changing tau
+
 #Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
-#TODO
+function BevertonHolt_modelII(Ndata, t, para)
+    @unpack α,β,a,b,K,p,D,C,τ = para
+        return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (D*((a-b*exp(-K*(τ+1)))*Ndata[t-τ]))/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*(a-b*exp(-K*(τ+1)))*Ndata[t-τ])
+end
+
+let 
+    time = 500
+    timeseries = model_recursion(0.1,time,BevHoltPar(τ=3,p=0.55), BevertonHolt_modelII)
+    plot(0:1:time,timeseries)
+    # return timeseries
+end
 
 #Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)
 #TODO
@@ -65,7 +78,19 @@ let
 end
 
 #Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
-#TODO
+#Attempt where mix Ricker model with bevertonholt solution to fraction of immature individuals that survive to t+1
+function Ricker_modelIIa(Ndata, t, para)
+    @unpack r,β,a,b,K,p,D,C,τ = para
+        return (Ndata[t] * exp(r*(1-(Ndata[t]/β)))) + (D*((a-b*exp(-K*(τ+1)))*Ndata[t-τ]))/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*(a-b*exp(-K*(τ+1)))*Ndata[t-τ])
+end
+
+#TODO change ricker to same formulation as streipert paper -equation 30 without the births?
+
+let 
+    time = 500
+    timeseries = model_recursion(0.1,time, RickerPar(τ=2,p=0.55), Ricker_modelIIa)
+    plot(0:1:time,timeseries)
+end
 
 #Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)
 #TODO
