@@ -12,8 +12,8 @@
 end
 
 @with_kw mutable struct RickerPar
-    r::Float64 = 0.1
-    β::Float64 = 0.3
+    d::Float64 = 0.1
+    c::Float64 = 0.3
     a::Float64 = 10
     b::Float64 = 200
     K::Float64 = 1
@@ -44,7 +44,19 @@ function model_τbifurc(τrange, model_func, par::Union{BevHoltPar, RickerPar}, 
         data[i] = timeseries[end-50]
     end
     return data
+end #using end value (#TODO code max 0 or equilibrium point for changing tau)
+
+function model_τorbit(τrange, model_func, par::Union{BevHoltPar, RickerPar}, finalts)
+    dataN = Vector{Vector{Float64}}(undef, length(τrange))
+    @threads for i in eachindex(τrange)
+        local_par = deepcopy(par)
+        local_par.τ = τrange[i]
+        timeseries = model_recursion(0.1, 500, local_par, model_func)
+        dataN[i] = timeseries[end-finalts:end]
+    end
+    return dataN
 end
+
 # function model_τbifurc(τrange, model_func, par)
 #     data= zeros(length(τrange))
 #     @threads for i in eachindex(τrange)
@@ -54,3 +66,13 @@ end
 #     return data
 # end
 
+#Accessory functions
+function plot_combination(single_vector, vector_of_vectors, pointcolor)
+    # Loop through the elements and plot the points
+    for i in eachindex(single_vector)
+        for y in eachindex(vector_of_vectors[i])
+            scatter!([single_vector[i]], [vector_of_vectors[i][y]],label=false, color=pointcolor )
+        end
+    end
+    plot!()
+end
