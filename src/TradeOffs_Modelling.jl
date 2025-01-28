@@ -131,16 +131,29 @@ function juvenilesurvival(J, para)
     return exp(-D-C*J)
 end
 
-
 function tau3matrix(vector, para)
     return [[adultsurvival(vector[1], para), juvenilebirth(vector[1], para), 0, 0] [0,0,juvenilesurvival(vector[2], para),0]   [0,0,0,juvenilesurvival(vector[3], para)]   [juvenilesurvival(vector[4], para),0,0,0]]
 end 
 
-function model_Leslierecursion(vector0, time, para, Lesliematrix)
+function LeslieMatrix(τval, para, AJvector)
+    local_par = deepcopy(para)
+    local_par.τ = τval
+    matrix = zeros(Float64,τval+1,τval+1)
+    matrix[1,1] = adultsurvival(AJvector[1], local_par)
+    matrix[2,1] = juvenilebirth(AJvector[1], local_par)
+    matrix[1,τval+1] = juvenilesurvival(AJvector[2], local_par)
+    for i in 3:τval+1
+        matrix[i,i-1] = juvenilesurvival(AJvector[i], local_par)
+    end
+    return matrix
+end
+
+function model_Leslierecursion(τval, time, para, init)
+    initvector = fill(init, τval+1)
     AJvector = [Vector{Float64}() for _ in 1:time+1]
-    AJvector[1] = vector0
+    AJvector[1] = initvector
     for t in 1:time
-        AJvector[t+1] = Lesliematrix(AJvector[t], para)*AJvector[t]
+        AJvector[t+1] = LeslieMatrix(τval, para, AJvector[t])*AJvector[t]
     end
     return AJvector
 end
@@ -151,8 +164,20 @@ end
 
 let 
     time = 500
-    timeseries = model_Leslierecursion([0.1,0.1,0.1,0.1], time, RickerPar(τ=3), tau3matrix)
-    plot(0:1:time,first_elements(timeseries))
+    τval=3
+    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval), 0.1)
+    # plot(0:1:time,first_elements(timeseries))
+    return first_elements(timeseries)[end-50:end]
+end
+
+
+function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init)
+    data = Vector{Vector{Float64}}(undef, length(τrange))
+    @threads for τi in eachindex(τrange)
+        timeseries = model_Leslierecursion(τrange[τi], time, para, init)
+        data[i] = first_elements(AJvector)[end-finalts:end]
+    end
+    return data
 end
 
 #Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)
