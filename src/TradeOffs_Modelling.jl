@@ -35,6 +35,28 @@ let
 end
 
 #Code max 0 or equilibrium point for changing tau
+function BevHoltI_equi(para)
+    @unpack α,β = para
+    m = calc_m(para)
+    equi = ((1+α)*m-α)/(β*(1-m))
+    if equi>0
+        return equi
+    else
+        return 0
+    end
+end
+
+let 
+    datap040=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.4)) for τval in 0:1:6]
+    datap050=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.5)) for τval in 0:1:6]
+    datap055=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.55)) for τval in 0:1:6]
+    equifig = scatter(0:1:6,datap040, label="p=0.4")
+    scatter!(0:1:6,datap050, label="p=0.5")
+    scatter!(0:1:6,datap055, label="p=0.55")
+    xlabel!("τ")
+    ylabel!("N*(τ)")
+end
+
 
 #Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
 function BevertonHolt_modelII(Ndata, t, para)
@@ -131,10 +153,6 @@ function juvenilesurvival(J, para)
     return exp(-D-C*J)
 end
 
-function tau3matrix(vector, para)
-    return [[adultsurvival(vector[1], para), juvenilebirth(vector[1], para), 0, 0] [0,0,juvenilesurvival(vector[2], para),0]   [0,0,0,juvenilesurvival(vector[3], para)]   [juvenilesurvival(vector[4], para),0,0,0]]
-end 
-
 function LeslieMatrix(τval, para, AJvector)
     local_par = deepcopy(para)
     local_par.τ = τval
@@ -166,8 +184,8 @@ let
     time = 500
     τval=3
     timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval), 0.1)
-    # plot(0:1:time,first_elements(timeseries))
-    return first_elements(timeseries)[end-50:end]
+    plot(0:1:time,first_elements(timeseries))
+    # return first_elements(timeseries)[end-50:end]
 end
 
 
@@ -175,9 +193,22 @@ function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init)
     data = Vector{Vector{Float64}}(undef, length(τrange))
     @threads for τi in eachindex(τrange)
         timeseries = model_Leslierecursion(τrange[τi], time, para, init)
-        data[i] = first_elements(AJvector)[end-finalts:end]
+        data[τi] = first_elements(timeseries)[end-finalts:end]
     end
     return data
+end
+
+let
+    τrange = 2:1:10
+    RIorbitdata = model_τorbit(τrange, Ricker_model, RickerPar(p=0.6), 50)
+    RIIorbitdata = model_τorbit(τrange, Ricker_modelIIa, RickerPar(), 50)
+    RLorbitdata = LeslieMatrixOrbitDiagram(τrange, 500, 50, RickerPar(), 0.1)
+    test = plot(ylims=(-0.1,8), xlims=(0,10))
+    plot_combination(τrange, RIorbitdata,:black)
+    plot_combination(τrange, RIIorbitdata,:blue)
+    plot_combination(τrange, RLorbitdata,:red)
+    xlabel!("τ")
+    ylabel!("N")
 end
 
 #Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)

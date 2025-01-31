@@ -57,15 +57,6 @@ function model_τorbit(τrange, model_func, par::Union{BevHoltPar, RickerPar}, f
     return dataN
 end
 
-# function model_τbifurc(τrange, model_func, par)
-#     data= zeros(length(τrange))
-#     @threads for i in eachindex(τrange)
-#         timeseries = model_recursion(0.1,500, BevHoltPar(τ=τrange[i], p=pval), model_func)
-#         data[i] = timeseries[end-50]
-#     end
-#     return data
-# end
-
 #Accessory functions
 function plot_combination(single_vector, vector_of_vectors, pointcolor)
     # Loop through the elements and plot the points
