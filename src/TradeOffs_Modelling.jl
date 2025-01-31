@@ -91,9 +91,10 @@ function Ricker_model(Ndata, t, para)
 end
 
 let 
-    time = 500
-    timeseries = model_recursion(0.1,time, RickerPar(τ=3,p=0.55,c=0.05,d=0.05), Ricker_model)
-    plot(0:1:time,timeseries)
+    time = 1000
+    timeseries = model_recursion(50.0,time, RickerPar(τ=6,a=15,p=0.6,C=0.15,D=0.5), Ricker_model)
+    plot(0:1:1000,timeseries)
+    # plot(450:1:500,timeseries[450:501], color=:red)
 end
 
 let     
@@ -153,25 +154,30 @@ function juvenilesurvival(J, para)
     return exp(-D-C*J)
 end
 
+function adultdensity(A,para)
+    @unpack D, C = para
+    return exp(-D-C*A)
+end
+
 function LeslieMatrix(τval, para, AJvector)
     local_par = deepcopy(para)
     local_par.τ = τval
     matrix = zeros(Float64,τval+1,τval+1)
     matrix[1,1] = adultsurvival(AJvector[1], local_par)
     matrix[2,1] = juvenilebirth(AJvector[1], local_par)
-    matrix[1,τval+1] = juvenilesurvival(AJvector[2], local_par)
+    matrix[1,τval+1] = juvenilesurvival(AJvector[τval], local_par)
     for i in 3:τval+1
-        matrix[i,i-1] = juvenilesurvival(AJvector[i], local_par)
+        matrix[i,i-1] = juvenilesurvival(AJvector[i-1], local_par)
     end
     return matrix
 end
 
-function model_Leslierecursion(τval, time, para, init)
+function model_Leslierecursion(τval, time, para, init, lesliematrix)
     initvector = fill(init, τval+1)
     AJvector = [Vector{Float64}() for _ in 1:time+1]
     AJvector[1] = initvector
     for t in 1:time
-        AJvector[t+1] = LeslieMatrix(τval, para, AJvector[t])*AJvector[t]
+        AJvector[t+1] = lesliematrix(τval, para, AJvector[t])*AJvector[t]
     end
     return AJvector
 end
@@ -183,33 +189,59 @@ end
 let 
     time = 500
     τval=3
-    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval), 0.1)
+    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval, a=400,D=0.5,C=0.15), 0.1, LeslieMatrix)
     plot(0:1:time,first_elements(timeseries))
     # return first_elements(timeseries)[end-50:end]
 end
 
 
-function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init)
+function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematrix)
     data = Vector{Vector{Float64}}(undef, length(τrange))
     @threads for τi in eachindex(τrange)
-        timeseries = model_Leslierecursion(τrange[τi], time, para, init)
+        timeseries = model_Leslierecursion(τrange[τi], time, para, init, lesliematrix)
         data[τi] = first_elements(timeseries)[end-finalts:end]
     end
     return data
 end
 
 let
-    τrange = 2:1:10
-    RIorbitdata = model_τorbit(τrange, Ricker_model, RickerPar(p=0.6), 50)
-    RIIorbitdata = model_τorbit(τrange, Ricker_modelIIa, RickerPar(), 50)
-    RLorbitdata = LeslieMatrixOrbitDiagram(τrange, 500, 50, RickerPar(), 0.1)
-    test = plot(ylims=(-0.1,8), xlims=(0,10))
-    plot_combination(τrange, RIorbitdata,:black)
-    plot_combination(τrange, RIIorbitdata,:blue)
+    τrange = 1:1:15
+    # RIorbitdata = model_τorbit(τrange, Ricker_model, RickerPar(a=100, p=0.6), 50)
+    # RIIorbitdata = model_τorbit(τrange, Ricker_modelIIa, RickerPar(a=100,D=0.5,C=0.15), 50)
+    RLorbitdata = LeslieMatrixOrbitDiagram(τrange, 50000, 100, RickerPar(a=300,d=1.5,c=2.0,D=0.5,C=0.15), 0.1, LeslieMatrix)
+    test = plot(ylims=(0.0,0.2), xlims=(0,15))
+    # plot_combination(τrange, RIorbitdata,:black)
+    # plot_combination(τrange, RIIorbitdata,:blue)
     plot_combination(τrange, RLorbitdata,:red)
     xlabel!("τ")
     ylabel!("N")
 end
 
-#Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)
-#TODO
+#Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals and their own cohort)
+function LeslieMatrix_AdultCohort(τval, para, AJvector)
+    local_par = deepcopy(para)
+    local_par.τ = τval
+    matrix = zeros(Float64,τval+1,τval+1)
+    matrix[1,1] = adultsurvival(AJvector[1], local_par)
+    matrix[2,1] = juvenilebirth(AJvector[1], local_par)
+    matrix[1,τval+1] = adultdensity(AJvector[1], local_par)*juvenilesurvival(AJvector[τval], local_par)
+    for i in 3:τval+1
+        matrix[i,i-1] = adultdensity(AJvector[1], local_par)*juvenilesurvival(AJvector[i-1], local_par)
+    end
+    return matrix
+end
+
+let
+    τrange = 2:1:15
+    RIorbitdata = model_τorbit(τrange, Ricker_model, RickerPar(p=0.6), 50)
+    RIIorbitdata = model_τorbit(τrange, Ricker_modelIIa, RickerPar(), 50)
+    RLIorbitdata = LeslieMatrixOrbitDiagram(τrange, 500, 50, RickerPar(), 0.1, LeslieMatrix)
+    RLIIorbitdata = LeslieMatrixOrbitDiagram(τrange, 500, 50, RickerPar(), 0.1, LeslieMatrix_AdultCohort)
+    test = plot(ylims=(-0.1,8), xlims=(0,15))
+    plot_combination(τrange, RIorbitdata,:black)
+    plot_combination(τrange, RIIorbitdata,:blue)
+    plot_combination(τrange, RLIorbitdata,:red)
+    plot_combination(τrange, RLIIorbitdata,:orange)
+    xlabel!("τ")
+    ylabel!("N")
+end
