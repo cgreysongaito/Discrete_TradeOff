@@ -35,7 +35,7 @@ function model_recursion(N0, time, para, model_func)
 end
 
 function model_τbifurc(τrange, model_func, par::Union{BevHoltPar, RickerPar}, pval)
-    data = zeros(length(τrange))
+    data = zeros(lengt608102318/8513732705h(τrange))
     @threads for i in eachindex(τrange)
         local_par = deepcopy(par)
         local_par.τ = τrange[i]

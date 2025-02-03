@@ -87,7 +87,8 @@ end
 ##Ricker Model
 function Ricker_model(Ndata, t, para)
     @unpack d,c, a,b,K,p,τ = para
-        return (Ndata[t] * exp(-d-c*Ndata[t])) + (a-b*exp(-K*(τ+1)))*(p^(τ+1))*Ndata[t-τ]
+    g=a-(b*exp(-K*(τ+1)))
+        return (Ndata[t] * exp(-d-c*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
 end
 
 let 
@@ -113,13 +114,14 @@ end
 #Attempt where mix Ricker model with bevertonholt solution to fraction of immature individuals that survive to t+1
 function Ricker_modelIIa(Ndata, t, para)
     @unpack d,c,a,b,K,p,D,C,τ = para
-        return (Ndata[t] * exp(-d-c*Ndata[t])) + (D*((a-b*exp(-K*(τ+1)))*Ndata[t-τ]))/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*(a-b*exp(-K*(τ+1)))*Ndata[t-τ])
+    g=a-(b*exp(-K*(τ+1)))
+        return (Ndata[t] * exp(-d-c*Ndata[t])) + (D/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*g*Ndata[t-τ]))*g*Ndata[t-τ]
 end
 
 
 let 
     time = 500
-    timeseries = model_recursion(0.1,time, RickerPar(τ=2,p=0.55), Ricker_modelIIa)
+    timeseries = model_recursion(0.1,time, RickerPar(τ=2.0, a=2.0, b=1.0, p=0.8, d=0.0001, K=1.0, c=0.3), Ricker_modelIIa)
     plot(0:1:time,timeseries)
 end
 
