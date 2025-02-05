@@ -8,19 +8,19 @@
     p::Float64 = 0.4
     D::Float64 = 0.1 #death rate of immature? check!
     C::Float64 = 0.1 #intraspecific competition rate of immature? check!
-    τ::Int = 5
+    τ::Int64 = 5
 end
 
 @with_kw mutable struct RickerPar
-    d::Float64 = 0.1
-    c::Float64 = 0.3
+    α::Float64 = 0.1
+    β::Float64 = 0.3
     a::Float64 = 10
     b::Float64 = 200
     K::Float64 = 1
     p::Float64 = 0.4
     D::Float64 = 0.1
     C::Float64 = 0.1
-    τ::Int = 5
+    τ::Int64 = 5
 end
 
 
