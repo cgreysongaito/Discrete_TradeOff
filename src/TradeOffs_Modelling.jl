@@ -2,18 +2,7 @@ include("packages.jl")
 include("TradeOffs_CommonCode.jl")
 
 ##Beverton Holt Model
-function calc_m(para)
-    @unpack a,b,K,p,τ = para
-    m = (a-b*exp(-K*(τ+1)))*(p^(τ+1))
-    return m
-end
-
 #Density independent survival of immature individuals
-function BevertonHolt_model(Ndata, t, para)
-    @unpack α,β,a,b,K,p,τ = para
-        return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (a-b*exp(-K*(τ+1)))*(p^(τ+1))*Ndata[t-τ]
-end
-
 let 
     time = 500
     timeseries = model_recursion(0.1,time,BevHoltPar(τ=3,p=0.55), BevertonHolt_model)
@@ -59,11 +48,6 @@ end
 
 
 #Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
-function BevertonHolt_modelII(Ndata, t, para)
-    @unpack α,β,a,b,K,p,D,C,τ = para
-        return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (D*((a-b*exp(-K*(τ+1)))*Ndata[t-τ]))/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*(a-b*exp(-K*(τ+1)))*Ndata[t-τ])
-end
-
 let 
     time = 500
     timeseries = model_recursion(0.1,time,BevHoltPar(τ=3,p=0.55), BevertonHolt_modelII)
@@ -85,83 +69,180 @@ end
 #TODO
 
 ##Ricker Model
-function Ricker_model(Ndata, t, para)
-    @unpack α,β,a,b,K,p,τ = para
-    g=a-(b*exp(-K*(τ+1)))
-        return (Ndata[t] * exp(-α-β*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
-end
-
-# function RickerConstantBound(para)
-#     @unpack a, b, K, τ, p = para
-#     return (a-b*exp(-K*(τ+1)))*p^(τ+1)
+# function model_aorbit(model_func, par::Union{BevHoltPar, RickerPar}, finalts)
+#     arange=round(alowerconstraint(par), digits=2)+0.1:0.1:round(ahigherconstraint(par),digits=2)-0.1
+#     dataN = Vector{Vector{Float64}}(undef, length(arange))
+#     @threads for i in eachindex(arange)
+#         local_par = deepcopy(par)
+#         local_par.a = arange[i]
+#         timeseries = model_recursion(10.0, 10000, local_par, model_func)
+#         dataN[i] = timeseries[end-finalts:end]
+#     end
+#     return [arange,dataN]
 # end
 
-# RickerConstantBound(RickerPar(τ=4,a=2.5,b=0.2, K=5.0, p=0.7))
-
-function alowerconstraint(para)
-    @unpack b, K, τ = para
-    return b*exp(-K*(τ+1))
-end
-
-function ahigherconstraint(para)
-    @unpack a, b, K, τ, p = para
-    return (1/(p^(τ+1)))+b*exp(-K*(τ+1))
-end
-
-#add tests for a lower constraint and q constraint
-
-function model_aorbit(model_func, par::Union{BevHoltPar, RickerPar}, finalts)
-    # arange=alowerconstraint(par):0.01:ahigherconstraint(par)
-    arange=9.0:0.01:25.0
-    dataN = Vector{Vector{Float64}}(undef, length(arange))
-    @threads for i in eachindex(arange)
-        local_par = deepcopy(par)
-        local_par.a = arange[i]
-        timeseries = model_recursion(10.0, 10000.0, local_par, model_func)
-        dataN[i] = timeseries[end-finalts:end]
-    end
-    return [arange,dataN]
-    # return dataN
-end
-
-model_recursion(10.0,1000, RickerPar(τ=2,a=10.0), Ricker_model)
-
-alowerconstraint(RickerPar(τ=2,a=10.0))
-ahigherconstraint(RickerPar(τ=2,a=10.0))
 let 
-    time = 10000
-    timeseries = model_recursion(10.0,time, RickerPar(τ=2,a=10.0), Ricker_model)
-    
-    return timeseries
-    # plot(0:1:10000,timeseries)
-    # plot(450:1:500,timeseries[450:501], color=:red)
+    tau2data=flattenorbitdata(model_aorbit(Ricker_model, RickerPar(τ=2), 50))
+    tau3data=flattenorbitdata(model_aorbit(Ricker_model, RickerPar(τ=3), 50))
+    tau4data=flattenorbitdata(model_aorbit(Ricker_model, RickerPar(τ=4), 50))
+    tau5data=flattenorbitdata(model_aorbit(Ricker_model, RickerPar(τ=5), 50))
+    p2=scatter(tau2data[1], tau2data[2],color=:black)
+    title!("τ=2")
+    xlabel!("a")
+    ylabel!("N")
+    p3=scatter(tau3data[1], tau3data[2],color=:black)
+    title!("τ=3")
+    xlabel!("a")
+    ylabel!("N")
+    p4=scatter(tau4data[1], tau4data[2],color=:black)
+    title!("τ=4")
+    xlabel!("a")
+    ylabel!("N")
+    p5=scatter(tau5data[1], tau5data[2],color=:black)
+    title!("τ=5")
+    xlabel!("a")
+    ylabel!("N")
+    plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
 end
 
-
-let 
-    tau2data=model_aorbit(Ricker_model, RickerPar(τ=2), 50)
-    # tau3data=model_aorbit(Ricker_model, RickerPar(τ=3), 50)
-    # tau4data=model_aorbit(Ricker_model, RickerPar(τ=4), 50)
-    # tau5data=model_aorbit(Ricker_model, RickerPar(τ=5), 50)
-    return tau2data
-    # p1=plot(ylims=(0,30), xlims=(0,10))
-    # plot_combination(tau2data[1], tau2data[2],:black)
-end
-##TODO something is not working
-let 
-    time = 10000
-    timeseries = model_recursion(10.0,time, RickerPar(τ=2,a=7e-8,b=0.2, K=5.0, p=0.7), Ricker_model)
-    plot(0:1:10000,timeseries)
-    # plot(450:1:500,timeseries[450:501], color=:red)
-end
+# function model_porbit(model_func, par::Union{BevHoltPar, RickerPar}, finalts)
+#     upperlimittest=phigherconstraint(par)
+#     if upperlimittest>1.0
+#         upperlimit=1.0
+#     else
+#         upperlimit=upperlimittest
+#     end
+#     prange=0.0:0.001:upperlimit-0.001
+#     dataN = Vector{Vector{Float64}}(undef, length(prange))
+#     @threads for i in eachindex(prange)
+#         local_par = deepcopy(par)
+#         local_par.p = prange[i]
+#         timeseries = model_recursion(10.0, 10000, local_par, model_func)
+#         dataN[i] = timeseries[end-finalts:end]
+#     end
+#     return [prange,dataN]
+# end
 
 let 
-    time = 100000
-    timeseries = model_recursion(10.0,time, RickerPar(τ=2.0, a=7.75, b=0.5, p=0.5, d=0.3, K=1.0, c=35.0), Ricker_model)
-    plot(0:1:100000,timeseries)
-    ylims!(-0.1,10)
-    # plot(450:1:500,timeseries[450:501], color=:red)
+    tau2data=flattenorbitdata(model_porbit(Ricker_model, RickerPar(τ=2, a=15.0), 150))
+    println(calc_g(RickerPar(τ=2, a=15.0)))
+    tau3data=flattenorbitdata(model_porbit(Ricker_model, RickerPar(τ=3, a=15.0), 150))
+    println(calc_g(RickerPar(τ=3, a=15.0)))
+    tau4data=flattenorbitdata(model_porbit(Ricker_model, RickerPar(τ=4, a=15.0), 150))
+    println(calc_g(RickerPar(τ=4, a=15.0)))
+    tau5data=flattenorbitdata(model_porbit(Ricker_model, RickerPar(τ=5, a=15.0), 150))
+    println(calc_g(RickerPar(τ=5, a=15.0)))
+    p2=scatter(tau2data[1], tau2data[2],color=:black)
+    title!("τ=2")
+    xlabel!("p")
+    ylabel!("N")
+    xlims!(0.0,1.0)
+    p3=scatter(tau3data[1], tau3data[2],color=:black)
+    title!("τ=3")
+    xlabel!("p")
+    ylabel!("N")
+    xlims!(0.0,1.0)
+    p4=scatter(tau4data[1], tau4data[2],color=:black)
+    title!("τ=4")
+    xlabel!("p")
+    ylabel!("N")
+    xlims!(0.0,1.0)
+    p5=scatter(tau5data[1], tau5data[2],color=:black)
+    title!("τ=5")
+    xlabel!("p")
+    ylabel!("N")
+    xlims!(0.0,1.0)
+    plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
 end
+# function model_αorbit(model_func, par::Union{BevHoltPar, RickerPar}, upperα, finalts)
+#     αrange=0.01:0.01:upperα
+#     dataN = Vector{Vector{Float64}}(undef, length(αrange))
+#     @threads for i in eachindex(αrange)
+#         local_par = deepcopy(par)
+#         local_par.α = αrange[i]
+#         timeseries = model_recursion(10.0, 10000, local_par, model_func)
+#         dataN[i] = timeseries[end-finalts:end]
+#     end
+#     return [αrange,dataN]
+# end
+
+let 
+    tau2data=flattenorbitdata(model_αorbit(Ricker_model, RickerPar(τ=2, a=25.0), 2.0, 150))
+    println(calc_m(RickerPar(τ=2, a=25.0)))
+    tau3data=flattenorbitdata(model_αorbit(Ricker_model, RickerPar(τ=3, a=25.0), 2.0, 150))
+    println(calc_m(RickerPar(τ=3, a=25.0)))
+    tau4data=flattenorbitdata(model_αorbit(Ricker_model, RickerPar(τ=4, a=25.0), 2.0, 150))
+    println(calc_m(RickerPar(τ=4, a=25.0)))
+    tau5data=flattenorbitdata(model_αorbit(Ricker_model, RickerPar(τ=5, a=25.0), 2.0, 150))
+    println(calc_m(RickerPar(τ=5, a=25.0)))
+    p2=scatter(tau2data[1], tau2data[2],color=:black)
+    title!("τ=2")
+    xlabel!("α")
+    ylabel!("N")
+    xlims!(0.0,2.0)
+    p3=scatter(tau3data[1], tau3data[2],color=:black)
+    title!("τ=3")
+    xlabel!("α")
+    ylabel!("N")
+    xlims!(0.0,2.0)
+    p4=scatter(tau4data[1], tau4data[2],color=:black)
+    title!("τ=4")
+    xlabel!("α")
+    ylabel!("N")
+    xlims!(0.0,2.0)
+    p5=scatter(tau5data[1], tau5data[2],color=:black)
+    title!("τ=5")
+    xlabel!("α")
+    ylabel!("N")
+    xlims!(0.0,2.0)
+    plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+end
+
+
+# function model_βorbit(model_func, par::Union{BevHoltPar, RickerPar}, upperβ, finalts)
+#     βrange=0.01:0.01:upperβ
+#     dataN = Vector{Vector{Float64}}(undef, length(βrange))
+#     @threads for i in eachindex(βrange)
+#         local_par = deepcopy(par)
+#         local_par.β = βrange[i]
+#         timeseries = model_recursion(10.0, 100000, local_par, model_func)
+#         dataN[i] = timeseries[end-finalts:end]
+#     end
+#     return [βrange,dataN]
+# end
+
+let 
+    tau2data=flattenorbitdata(model_βorbit(Ricker_model, RickerPar(τ=2, a=25.0), 0.5, 50))
+    println(calc_m(RickerPar(τ=2, a=25.0)))
+    tau3data=flattenorbitdata(model_βorbit(Ricker_model, RickerPar(τ=3, a=25.0), 0.5, 150))
+    println(calc_m(RickerPar(τ=3, a=25.0)))
+    tau4data=flattenorbitdata(model_βorbit(Ricker_model, RickerPar(τ=4, a=25.0), 0.5, 150))
+    println(calc_m(RickerPar(τ=4, a=25.0)))
+    tau5data=flattenorbitdata(model_βorbit(Ricker_model, RickerPar(τ=5, a=25.0), 0.5, 150))
+    println(calc_m(RickerPar(τ=5, a=25.0)))
+    p2=scatter(tau2data[1], tau2data[2],color=:black)
+    title!("τ=2")
+    xlabel!("β")
+    ylabel!("N")
+    xlims!(0.0,0.5)
+    p3=scatter(tau3data[1], tau3data[2],color=:black)
+    title!("τ=3")
+    xlabel!("β")
+    ylabel!("N")
+    xlims!(0.0,0.5)
+    p4=scatter(tau4data[1], tau4data[2],color=:black)
+    title!("τ=4")
+    xlabel!("β")
+    ylabel!("N")
+    xlims!(0.0,0.5)
+    p5=scatter(tau5data[1], tau5data[2],color=:black)
+    title!("τ=5")
+    xlabel!("β")
+    ylabel!("N")
+    xlims!(0.0,0.5)
+    plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+end
+
 
 let     
     τrange = 0:1:10
@@ -177,12 +258,6 @@ end
 
 #Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
 #Attempt where mix Ricker model with bevertonholt solution to fraction of immature individuals that survive to t+1
-function Ricker_modelIIa(Ndata, t, para)
-    @unpack α,β,a,b,K,p,D,C,τ = para
-    g=a-b*exp(-K*(τ+1))
-        return (Ndata[t] * exp(-α-β*Ndata[t])) + (D/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*g*Ndata[t-τ]))*g*Ndata[t-τ]
-end
-
 
 let 
     time = 500

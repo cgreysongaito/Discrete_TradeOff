@@ -1,3 +1,26 @@
+#Models
+function BevertonHolt_model(Ndata, t, para)
+    @unpack α,β,a,b,K,p,τ = para
+        return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (a-b*exp(-K*(τ+1)))*(p^(τ+1))*Ndata[t-τ]
+end
+
+function BevertonHolt_modelII(Ndata, t, para)
+    @unpack α,β,a,b,K,p,D,C,τ = para
+        return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (D*((a-b*exp(-K*(τ+1)))*Ndata[t-τ]))/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*(a-b*exp(-K*(τ+1)))*Ndata[t-τ])
+end
+
+function Ricker_model(Ndata, t, para)
+    @unpack α,β,a,b,K,p,τ = para
+    g=a-b*exp(-K*(τ+1))
+        return (Ndata[t] * exp(-α-β*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
+end
+
+function Ricker_modelIIa(Ndata, t, para)
+    @unpack α,β,a,b,K,p,D,C,τ = para
+    g=a-b*exp(-K*(τ+1))
+        return (Ndata[t] * exp(-α-β*Ndata[t])) + (D/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*g*Ndata[t-τ]))*g*Ndata[t-τ]
+end
+
 #Parameters for the models
 @with_kw mutable struct BevHoltPar
     α::Float64 = 0.1 #death rate of mature? check!
@@ -23,8 +46,41 @@ end
     τ::Int64 = 5
 end
 
+function calc_m(para)
+    @unpack a,b,K,p,τ = para
+    m = (a-b*exp(-K*(τ+1)))*(p^(τ+1))
+    return m
+end
 
-function model_recursion(N0, time, para, model_func)
+function calc_g(para)
+    @unpack a,b,K,τ = para
+    g = a-b*exp(-K*(τ+1))
+    return g
+end
+
+function alowerconstraint(para)
+    @unpack b, K, τ = para
+    return b*exp(-K*(τ+1))
+end
+
+function ahigherconstraint(para)
+    @unpack a, b, K, τ, p = para
+    return (1/(p^(τ+1)))+b*exp(-K*(τ+1))
+end
+
+function phigherconstraint(para)
+    @unpack a, b, K, τ = para
+    return (1/(a-b*exp(-K*(τ+1))))^(1/(τ+1))
+end
+
+
+function model_recursion(N0::Float64, time::Int64, para, model_func)
+    if !isa(time, Int64)
+        error("time variable needs to be Int64")
+    end
+    if !isa(N0, Float64)
+        error("N0 variable needs to be Float64")
+    end
     @unpack τ = para
     N = fill(N0, τ+1)
     for t in τ+1:τ+time
@@ -57,6 +113,42 @@ function model_τorbit(τrange, model_func, par::Union{BevHoltPar, RickerPar}, f
     return dataN
 end
 
+function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar, RickerPar}, finalts::Int64; upperval::Float64=1.0)
+    if paraval == "a"
+        range=round(alowerconstraint(defaultpar), digits=2)+0.1:0.1:round(ahigherconstraint(defaultpar),digits=2)-0.1
+    elseif paraval == "p"
+        upperlimittest=phigherconstraint(defaultpar)
+        if upperlimittest>1.0
+            upperlimit=1.0
+        else
+            upperlimit=upperlimittest
+        end
+        range=0.0:0.001:upperlimit-0.001
+    elseif paraval=="α"
+        range=0.01:0.01:upperval
+    elseif paraval=="β"
+        range=0.001:0.001:upperval
+    else
+        error("paraval should be either a, p, α, or β")
+    end
+    dataN = Vector{Vector{Float64}}(undef, length(range))
+    @threads for i in eachindex(range)
+        local_par = deepcopy(defaultpar)
+        if paraval == "a"
+            local_par.a = range[i]
+        elseif paraval == "p"
+            local_par.p = range[i]
+        elseif paraval == "α"
+            local_par.α = range[i]
+        else
+            local_par.β = range[i]
+        end
+        timeseries = model_recursion(10.0, 10000, local_par, model_func)
+        dataN[i] = timeseries[end-finalts:end]
+    end
+    return [range,dataN]
+end
+
 #Accessory functions
 function plot_combination(single_vector, vector_of_vectors, pointcolor)
     # Loop through the elements and plot the points
@@ -66,4 +158,19 @@ function plot_combination(single_vector, vector_of_vectors, pointcolor)
         end
     end
     plot!()
+end
+
+function flattenorbitdata(orbitdata)
+    # Loop through the elements and plot the points
+    xaxisdata=[]
+    yaxisdata=[]
+    single_vector=orbitdata[1]
+    vector_of_vectors=orbitdata[2]
+    for i in eachindex(single_vector)
+        for y in eachindex(vector_of_vectors[i])
+            push!(xaxisdata,single_vector[i])
+            push!(yaxisdata,vector_of_vectors[i][y])
+        end
+    end
+    return [xaxisdata, yaxisdata]
 end
