@@ -9,13 +9,13 @@ function BevertonHolt_modelII(Ndata, t, para)
         return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (D*((a-b*exp(-K*(τ+1)))*Ndata[t-τ]))/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*(a-b*exp(-K*(τ+1)))*Ndata[t-τ])
 end
 
-function Ricker_model(Ndata, t, para)
+function RickerConstant_model(Ndata, t, para)
     @unpack α,β,a,b,K,p,τ = para
     g=a-b*exp(-K*(τ+1))
         return (Ndata[t] * exp(-α-β*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
 end
 
-function Ricker_modelIIa(Ndata, t, para)
+function RickerBeverton_model(Ndata, t, para)
     @unpack α,β,a,b,K,p,D,C,τ = para
     g=a-b*exp(-K*(τ+1))
         return (Ndata[t] * exp(-α-β*Ndata[t])) + (D/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*g*Ndata[t-τ]))*g*Ndata[t-τ]
@@ -91,7 +91,7 @@ function model_recursion(N0::Float64, time::Int64, para, model_func)
 end
 
 function model_τbifurc(τrange, model_func, par::Union{BevHoltPar, RickerPar}, pval)
-    data = zeros(lengt608102318/8513732705h(τrange))
+    data = zeros(length(τrange))
     @threads for i in eachindex(τrange)
         local_par = deepcopy(par)
         local_par.τ = τrange[i]
@@ -110,12 +110,14 @@ function model_τorbit(τrange, model_func, par::Union{BevHoltPar, RickerPar}, f
         timeseries = model_recursion(0.1, 500, local_par, model_func)
         dataN[i] = timeseries[end-finalts:end]
     end
-    return dataN
+    return [τrange,dataN]
 end
 
-function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar, RickerPar}, finalts::Int64; upperval::Float64=1.0)
-    if paraval == "a"
+function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar, RickerPar}, finalts::Int64; upperval::Union{Float64,Int64}=1.0)
+    if paraval == "a" && model_func==RickerConstant_model
         range=round(alowerconstraint(defaultpar), digits=2)+0.1:0.1:round(ahigherconstraint(defaultpar),digits=2)-0.1
+    elseif paraval == "a" 
+        range=round(alowerconstraint(defaultpar), digits=2)+0.1:1.0:upperval
     elseif paraval == "p"
         upperlimittest=phigherconstraint(defaultpar)
         if upperlimittest>1.0
@@ -128,8 +130,10 @@ function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar
         range=0.01:0.01:upperval
     elseif paraval=="β"
         range=0.001:0.001:upperval
+    elseif paraval=="τ"
+        range=2:1:upperval
     else
-        error("paraval should be either a, p, α, or β")
+        error("paraval should be either a, p, α, β, or τ")
     end
     dataN = Vector{Vector{Float64}}(undef, length(range))
     @threads for i in eachindex(range)
@@ -140,8 +144,10 @@ function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar
             local_par.p = range[i]
         elseif paraval == "α"
             local_par.α = range[i]
-        else
+        elseif paraval == "β"
             local_par.β = range[i]
+        else 
+            local_par.τ = range[i]
         end
         timeseries = model_recursion(10.0, 10000, local_par, model_func)
         dataN[i] = timeseries[end-finalts:end]

@@ -69,69 +69,76 @@ end
 #TODO
 
 ##Ricker Model
-# function model_aorbit(model_func, par::Union{BevHoltPar, RickerPar}, finalts)
-#     arange=round(alowerconstraint(par), digits=2)+0.1:0.1:round(ahigherconstraint(par),digits=2)-0.1
-#     dataN = Vector{Vector{Float64}}(undef, length(arange))
-#     @threads for i in eachindex(arange)
-#         local_par = deepcopy(par)
-#         local_par.a = arange[i]
-#         timeseries = model_recursion(10.0, 10000, local_par, model_func)
-#         dataN[i] = timeseries[end-finalts:end]
-#     end
-#     return [arange,dataN]
-# end
 
 let 
-    tau2data=flattenorbitdata(model_aorbit(Ricker_model, RickerPar(τ=2), 50))
-    tau3data=flattenorbitdata(model_aorbit(Ricker_model, RickerPar(τ=3), 50))
-    tau4data=flattenorbitdata(model_aorbit(Ricker_model, RickerPar(τ=4), 50))
-    tau5data=flattenorbitdata(model_aorbit(Ricker_model, RickerPar(τ=5), 50))
+    tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=2), 50))
+    tau3data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=3), 50))
+    tau4data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=4), 50))
+    tau5data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=5), 50))
     p2=scatter(tau2data[1], tau2data[2],color=:black)
     title!("τ=2")
     xlabel!("a")
     ylabel!("N")
+    xlims!(0.0,250.0)
     p3=scatter(tau3data[1], tau3data[2],color=:black)
     title!("τ=3")
     xlabel!("a")
     ylabel!("N")
+    xlims!(0.0,250.0)
     p4=scatter(tau4data[1], tau4data[2],color=:black)
     title!("τ=4")
     xlabel!("a")
     ylabel!("N")
+    xlims!(0.0,250.0)
     p5=scatter(tau5data[1], tau5data[2],color=:black)
     title!("τ=5")
     xlabel!("a")
     ylabel!("N")
+    xlims!(0.0,250.0)
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
 end
 
-# function model_porbit(model_func, par::Union{BevHoltPar, RickerPar}, finalts)
-#     upperlimittest=phigherconstraint(par)
-#     if upperlimittest>1.0
-#         upperlimit=1.0
-#     else
-#         upperlimit=upperlimittest
-#     end
-#     prange=0.0:0.001:upperlimit-0.001
-#     dataN = Vector{Vector{Float64}}(undef, length(prange))
-#     @threads for i in eachindex(prange)
-#         local_par = deepcopy(par)
-#         local_par.p = prange[i]
-#         timeseries = model_recursion(10.0, 10000, local_par, model_func)
-#         dataN[i] = timeseries[end-finalts:end]
-#     end
-#     return [prange,dataN]
-# end
+let 
+    tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=2,p=0.6), 50))
+    tau3data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=3,p=0.6), 50))
+    tau4data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=4,p=0.6), 50))
+    tau5data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=5,p=0.6), 50))
+    p2=scatter(tau2data[1], tau2data[2],color=:black)
+    title!("τ=2")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,20.0)
+    p3=scatter(tau3data[1], tau3data[2],color=:black)
+    title!("τ=3")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,20.0)
+    p4=scatter(tau4data[1], tau4data[2],color=:black)
+    title!("τ=4")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,20.0)
+    p5=scatter(tau5data[1], tau5data[2],color=:black)
+    title!("τ=5")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,20.0)
+    plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+end
+
+let
+    τrange = 2:1:10
+    RIorbitdata = flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", RickerPar(a=11.0,p=0.6), 150; upperval=10))
+    scatter(RIorbitdata[1], RIorbitdata[2],color=:red, label="Ricker (constant): a=11.0,p=0.6")
+    xlabel!("τ")
+    ylabel!("N")
+end
 
 let 
-    tau2data=flattenorbitdata(model_porbit(Ricker_model, RickerPar(τ=2, a=15.0), 150))
-    println(calc_g(RickerPar(τ=2, a=15.0)))
-    tau3data=flattenorbitdata(model_porbit(Ricker_model, RickerPar(τ=3, a=15.0), 150))
-    println(calc_g(RickerPar(τ=3, a=15.0)))
-    tau4data=flattenorbitdata(model_porbit(Ricker_model, RickerPar(τ=4, a=15.0), 150))
-    println(calc_g(RickerPar(τ=4, a=15.0)))
-    tau5data=flattenorbitdata(model_porbit(Ricker_model, RickerPar(τ=5, a=15.0), 150))
-    println(calc_g(RickerPar(τ=5, a=15.0)))
+    tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "p", RickerPar(τ=2, a=15.0), 150))
+    tau3data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "p", RickerPar(τ=3, a=15.0), 150))
+    tau4data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "p", RickerPar(τ=4, a=15.0), 150))
+    tau5data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "p", RickerPar(τ=5, a=15.0), 150))
     p2=scatter(tau2data[1], tau2data[2],color=:black)
     title!("τ=2")
     xlabel!("p")
@@ -154,26 +161,15 @@ let
     xlims!(0.0,1.0)
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
 end
-# function model_αorbit(model_func, par::Union{BevHoltPar, RickerPar}, upperα, finalts)
-#     αrange=0.01:0.01:upperα
-#     dataN = Vector{Vector{Float64}}(undef, length(αrange))
-#     @threads for i in eachindex(αrange)
-#         local_par = deepcopy(par)
-#         local_par.α = αrange[i]
-#         timeseries = model_recursion(10.0, 10000, local_par, model_func)
-#         dataN[i] = timeseries[end-finalts:end]
-#     end
-#     return [αrange,dataN]
-# end
 
 let 
-    tau2data=flattenorbitdata(model_αorbit(Ricker_model, RickerPar(τ=2, a=25.0), 2.0, 150))
+    tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "α", RickerPar(τ=2, a=25.0), 150; upperval=2.0))
     println(calc_m(RickerPar(τ=2, a=25.0)))
-    tau3data=flattenorbitdata(model_αorbit(Ricker_model, RickerPar(τ=3, a=25.0), 2.0, 150))
+    tau3data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "α", RickerPar(τ=3, a=25.0), 150; upperval=2.0))
     println(calc_m(RickerPar(τ=3, a=25.0)))
-    tau4data=flattenorbitdata(model_αorbit(Ricker_model, RickerPar(τ=4, a=25.0), 2.0, 150))
+    tau4data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "α", RickerPar(τ=4, a=25.0), 150; upperval=2.0))
     println(calc_m(RickerPar(τ=4, a=25.0)))
-    tau5data=flattenorbitdata(model_αorbit(Ricker_model, RickerPar(τ=5, a=25.0), 2.0, 150))
+    tau5data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "α", RickerPar(τ=5, a=25.0), 150; upperval=2.0))
     println(calc_m(RickerPar(τ=5, a=25.0)))
     p2=scatter(tau2data[1], tau2data[2],color=:black)
     title!("τ=2")
@@ -198,27 +194,14 @@ let
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
 end
 
-
-# function model_βorbit(model_func, par::Union{BevHoltPar, RickerPar}, upperβ, finalts)
-#     βrange=0.01:0.01:upperβ
-#     dataN = Vector{Vector{Float64}}(undef, length(βrange))
-#     @threads for i in eachindex(βrange)
-#         local_par = deepcopy(par)
-#         local_par.β = βrange[i]
-#         timeseries = model_recursion(10.0, 100000, local_par, model_func)
-#         dataN[i] = timeseries[end-finalts:end]
-#     end
-#     return [βrange,dataN]
-# end
-
 let 
-    tau2data=flattenorbitdata(model_βorbit(Ricker_model, RickerPar(τ=2, a=25.0), 0.5, 50))
+    tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "β", RickerPar(τ=2, a=25.0), 50; upperval=0.5))
     println(calc_m(RickerPar(τ=2, a=25.0)))
-    tau3data=flattenorbitdata(model_βorbit(Ricker_model, RickerPar(τ=3, a=25.0), 0.5, 150))
+    tau3data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "β", RickerPar(τ=3, a=25.0), 50; upperval=0.5))
     println(calc_m(RickerPar(τ=3, a=25.0)))
-    tau4data=flattenorbitdata(model_βorbit(Ricker_model, RickerPar(τ=4, a=25.0), 0.5, 150))
+    tau4data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "β", RickerPar(τ=4, a=25.0), 50; upperval=0.5))
     println(calc_m(RickerPar(τ=4, a=25.0)))
-    tau5data=flattenorbitdata(model_βorbit(Ricker_model, RickerPar(τ=5, a=25.0), 0.5, 150))
+    tau5data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "β", RickerPar(τ=5, a=25.0), 50; upperval=0.5))
     println(calc_m(RickerPar(τ=5, a=25.0)))
     p2=scatter(tau2data[1], tau2data[2],color=:black)
     title!("τ=2")
@@ -246,9 +229,9 @@ end
 
 let     
     τrange = 0:1:10
-    Rbifurcdata_p55 = model_τbifurc(τrange, Ricker_model, RickerPar(), 0.55)
-    Rbifurcdata_p5 = model_τbifurc(τrange, Ricker_model, RickerPar(), 0.5)
-    Rbifurcdata_p45 = model_τbifurc(τrange, Ricker_model, RickerPar(), 0.45)
+    Rbifurcdata_p55 = model_τbifurc(τrange, RickerConstant_model, RickerPar(), 0.55)
+    Rbifurcdata_p5 = model_τbifurc(τrange, RickerConstant_model, RickerPar(), 0.5)
+    Rbifurcdata_p45 = model_τbifurc(τrange, RickerConstant_model, RickerPar(), 0.45)
     scatter(τrange, Rbifurcdata_p55, label="p=0.55")
     scatter!(τrange, Rbifurcdata_p5, label="p=0.5")
     scatter!(τrange, Rbifurcdata_p45, label="p=0.45")
@@ -261,14 +244,14 @@ end
 
 let 
     time = 500
-    timeseries = model_recursion(0.1,time, RickerPar(τ=2.0, a=2.0, b=1.0, p=0.8, d=0.0001, K=1.0, c=0.3), Ricker_modelIIa)
+    timeseries = model_recursion(0.1,time, RickerPar(τ=2.0, a=2.0, b=1.0, p=0.8, d=0.0001, K=1.0, c=0.3), RickerBeverton_model)
     plot(0:1:time,timeseries)
 end
 
 let
     τrange = 0:1:10
-    RIorbitdata = model_τorbit(τrange, Ricker_model, RickerPar(), 50)
-    RIIorbitdata = model_τorbit(τrange, Ricker_modelIIa, RickerPar(), 50)
+    RIorbitdata = model_τorbit(τrange, RickerConstant_model, RickerPar(), 50)
+    RIIorbitdata = model_τorbit(τrange, RickerBeverton_model, RickerPar(), 50)
     test = plot(ylims=(0,5), xlims=(0,10))
     plot_combination(τrange, RIorbitdata,:red)
     plot_combination(τrange, RIIorbitdata,:black)
@@ -276,8 +259,34 @@ let
     ylabel!("N")
 end
 
-
-#Are we expecting oscillations in Ricker or Beverton Holt model? and with what parameter values?
+#QUESTION - what is the constraint for RickerBeverton model - already constrained by beverton part of density dependence. EXCEPT NEED LOWER BOUND TO a so that g(τ) does not go negative (negative g makes no biological sense)
+let 
+    tau2data=flattenorbitdata(orbitdiagrams(RickerBeverton_model, "a", RickerPar(τ=2), 50; upperval=50))
+    tau3data=flattenorbitdata(orbitdiagrams(RickerBeverton_model, "a", RickerPar(τ=3), 50; upperval=50))
+    tau4data=flattenorbitdata(orbitdiagrams(RickerBeverton_model, "a", RickerPar(τ=4), 50; upperval=50))
+    tau5data=flattenorbitdata(orbitdiagrams(RickerBeverton_model, "a", RickerPar(τ=5), 50; upperval=50))
+    p2=scatter(tau2data[1], tau2data[2],color=:black)
+    title!("τ=2")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,50.0)
+    p3=scatter(tau3data[1], tau3data[2],color=:black)
+    title!("τ=3")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,50.0)
+    p4=scatter(tau4data[1], tau4data[2],color=:black)
+    title!("τ=4")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,50.0)
+    p5=scatter(tau5data[1], tau5data[2],color=:black)
+    title!("τ=5")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,50.0)
+    plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+end
 
 #Leslie matrix version of the Ricker model
 function adultsurvival(A, para)
@@ -348,8 +357,8 @@ end
 
 let
     τrange = 1:1:15
-    # RIorbitdata = model_τorbit(τrange, Ricker_model, RickerPar(a=100, p=0.6), 50)
-    # RIIorbitdata = model_τorbit(τrange, Ricker_modelIIa, RickerPar(a=100,D=0.5,C=0.15), 50)
+    # RIorbitdata = model_τorbit(τrange, RickerConstant_model, RickerPar(a=100, p=0.6), 50)
+    # RIIorbitdata = model_τorbit(τrange, RickerBeverton_model, RickerPar(a=100,D=0.5,C=0.15), 50)
     RLorbitdata = LeslieMatrixOrbitDiagram(τrange, 50000, 100, RickerPar(a=300,d=1.5,c=2.0,D=0.5,C=0.15), 0.1, LeslieMatrix)
     test = plot(ylims=(0.0,0.2), xlims=(0,15))
     # plot_combination(τrange, RIorbitdata,:black)
@@ -375,8 +384,8 @@ end
 
 let
     τrange = 2:1:15
-    RIorbitdata = model_τorbit(τrange, Ricker_model, RickerPar(p=0.6), 50)
-    RIIorbitdata = model_τorbit(τrange, Ricker_modelIIa, RickerPar(), 50)
+    RIorbitdata = model_τorbit(τrange, RickerConstant_model, RickerPar(p=0.6), 50)
+    RIIorbitdata = model_τorbit(τrange, RickerBeverton_model, RickerPar(), 50)
     RLIorbitdata = LeslieMatrixOrbitDiagram(τrange, 500, 50, RickerPar(), 0.1, LeslieMatrix)
     RLIIorbitdata = LeslieMatrixOrbitDiagram(τrange, 500, 50, RickerPar(), 0.1, LeslieMatrix_AdultCohort)
     test = plot(ylims=(-0.1,8), xlims=(0,15))
