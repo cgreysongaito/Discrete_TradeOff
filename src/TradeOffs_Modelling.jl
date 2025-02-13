@@ -70,6 +70,19 @@ end
 
 ##Ricker Model
 
+# function timeembedding(tauval, Ndata)
+
+let 
+    time = 5000
+    finalts=4900
+    timeseries = model_recursion(0.1,time,RickerPar(τ=3,p=0.6, a=11.0), RickerConstant_model)
+    plot(timeseries[finalts-3:end-3], timeseries[finalts:end])
+    xlabel!("N(t-3)")
+    ylabel!("N(t)")
+    # return timeseries[4502:5001]
+end
+
+
 let 
     tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=2), 50))
     tau3data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=3), 50))
@@ -352,20 +365,26 @@ function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematr
         timeseries = model_Leslierecursion(τrange[τi], time, para, init, lesliematrix)
         data[τi] = first_elements(timeseries)[end-finalts:end]
     end
-    return data
+    return [τrange,data]
+end
+
+let 
+    timeseries = model_recursion(0.1,5000,RickerPar(τ=0, a=300.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
+    return timeseries[end-100:end]
 end
 
 let
     τrange = 1:1:15
     # RIorbitdata = model_τorbit(τrange, RickerConstant_model, RickerPar(a=100, p=0.6), 50)
     # RIIorbitdata = model_τorbit(τrange, RickerBeverton_model, RickerPar(a=100,D=0.5,C=0.15), 50)
-    RLorbitdata = LeslieMatrixOrbitDiagram(τrange, 50000, 100, RickerPar(a=300,d=1.5,c=2.0,D=0.5,C=0.15), 0.1, LeslieMatrix)
-    test = plot(ylims=(0.0,0.2), xlims=(0,15))
-    # plot_combination(τrange, RIorbitdata,:black)
-    # plot_combination(τrange, RIIorbitdata,:blue)
-    plot_combination(τrange, RLorbitdata,:red)
+    RLorbitdata = flattenorbitdata(LeslieMatrixOrbitDiagram(τrange, 50000, 100, RickerPar(a=300.0,α=1.5,β=2.0,D=0.5,C=0.15), 0.1, LeslieMatrix))
+    RLτ0data = model_recursion(0.1,5000,RickerPar(τ=0, a=300.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
+    RLτ0data_trans=RLτ0data[end-100:end]
+    p2=scatter(RLorbitdata[1], RLorbitdata[2],color=:black)
+    scatter!(zeros(length(RLτ0data_trans)), RLτ0data_trans, color=:black)
     xlabel!("τ")
     ylabel!("N")
+    xlims!(0.0,15.0)
 end
 
 #Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals and their own cohort)

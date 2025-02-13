@@ -21,6 +21,12 @@ function RickerBeverton_model(Ndata, t, para)
         return (Ndata[t] * exp(-α-β*Ndata[t])) + (D/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*g*Ndata[t-τ]))*g*Ndata[t-τ]
 end
 
+function RickerLeslie_τ0_model(Ndata, t, para)
+    @unpack α,β,a,b,K,p,τ = para
+    g=a-b*exp(-K*(τ+1))
+        return (Ndata[t] * exp(-α-β*Ndata[t])) + g*exp(-α-β*g*Ndata[t])*Ndata[t]
+end
+
 #Parameters for the models
 @with_kw mutable struct BevHoltPar
     α::Float64 = 0.1 #death rate of mature? check!
@@ -37,9 +43,9 @@ end
 @with_kw mutable struct RickerPar
     α::Float64 = 0.1
     β::Float64 = 0.3
-    a::Float64 = 10
-    b::Float64 = 200
-    K::Float64 = 1
+    a::Float64 = 10.0
+    b::Float64 = 200.0
+    K::Float64 = 1.0
     p::Float64 = 0.4
     D::Float64 = 0.1
     C::Float64 = 0.1
@@ -156,15 +162,15 @@ function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar
 end
 
 #Accessory functions
-function plot_combination(single_vector, vector_of_vectors, pointcolor)
-    # Loop through the elements and plot the points
-    for i in eachindex(single_vector)
-        for y in eachindex(vector_of_vectors[i])
-            scatter!([single_vector[i]], [vector_of_vectors[i][y]],label=false, color=pointcolor )
-        end
-    end
-    plot!()
-end
+# function plot_combination(single_vector, vector_of_vectors, pointcolor)
+#     # Loop through the elements and plot the points
+#     for i in eachindex(single_vector)
+#         for y in eachindex(vector_of_vectors[i])
+#             scatter!([single_vector[i]], [vector_of_vectors[i][y]],label=false, color=pointcolor )
+#         end
+#     end
+#     plot!()
+# end
 
 function flattenorbitdata(orbitdata)
     # Loop through the elements and plot the points
