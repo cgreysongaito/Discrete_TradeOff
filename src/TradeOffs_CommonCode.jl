@@ -33,7 +33,7 @@ end
     β::Float64 = 0.3 #intraspecific competition rate of mature? check!
     a::Float64 = 10
     b::Float64 = 200
-    K::Float64 = 1
+    K::Float64 = 1.0
     p::Float64 = 0.4
     D::Float64 = 0.1 #death rate of immature? check!
     C::Float64 = 0.1 #intraspecific competition rate of immature? check!
@@ -121,7 +121,7 @@ end
 
 function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar, RickerPar}, finalts::Int64; upperval::Union{Float64,Int64}=1.0)
     if paraval == "a" && model_func==RickerConstant_model
-        range=round(alowerconstraint(defaultpar), digits=2)+0.1:0.1:round(ahigherconstraint(defaultpar),digits=2)-0.1
+        range=round(alowerconstraint(defaultpar), digits=2)+0.1:0.01:round(ahigherconstraint(defaultpar),digits=2)-0.1
     elseif paraval == "a" 
         range=round(alowerconstraint(defaultpar), digits=2)+0.1:1.0:upperval
     elseif paraval == "p"
@@ -162,6 +162,7 @@ function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar
 end
 
 #Accessory functions
+
 # function plot_combination(single_vector, vector_of_vectors, pointcolor)
 #     # Loop through the elements and plot the points
 #     for i in eachindex(single_vector)
@@ -185,4 +186,8 @@ function flattenorbitdata(orbitdata)
         end
     end
     return [xaxisdata, yaxisdata]
+end
+
+function abpath()
+    replace(@__DIR__, "src" => "")
 end

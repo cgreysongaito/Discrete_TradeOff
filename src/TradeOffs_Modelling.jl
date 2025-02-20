@@ -70,22 +70,9 @@ end
 
 ##Ricker Model
 
-# function timeembedding(tauval, Ndata)
-
-let 
-    time = 5000
-    finalts=4900
-    timeseries = model_recursion(0.1,time,RickerPar(τ=3,p=0.6, a=11.0), RickerConstant_model)
-    plot(timeseries[finalts-3:end-3], timeseries[finalts:end])
-    xlabel!("N(t-3)")
-    ylabel!("N(t)")
-    # return timeseries[4502:5001]
-end
-
-
 let 
     tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=2), 50))
-    tau3data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=3), 50))
+    # tau3data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=3), 50))
     tau4data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=4), 50))
     tau5data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=5), 50))
     p2=scatter(tau2data[1], tau2data[2],color=:black)
@@ -109,7 +96,52 @@ let
     ylabel!("N")
     xlims!(0.0,250.0)
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/aorbitdiagram_Rickerconstant.pdf"))
 end
+
+let 
+    time = 5000
+    finalts=4950
+    timeseries = model_recursion(0.1,time,RickerPar(τ=3,p=0.6, a=10.8), RickerConstant_model)
+    p1=scatter(timeseries[finalts-3:end-3], timeseries[finalts:end])
+    xlabel!("N(t-3)")
+    ylabel!("N(t)")
+    p2=scatter(0.0:1.0:51, timeseries[finalts:end])
+    xlabel!("t")
+    ylabel!("N(t)")
+    plot(p1,p2, layout=(2,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/timeemedding_a108_Rickerconstant.pdf"))
+end
+
+
+let 
+    time = 5000
+    finalts=4500
+    timeseries = model_recursion(0.1,time,RickerPar(τ=3,p=0.6, a=11.0), RickerConstant_model)
+    p1=scatter(timeseries[finalts-3:end-3], timeseries[finalts:end])
+    xlabel!("N(t-3)")
+    ylabel!("N(t)")
+    p2=scatter(0.0:1.0:501, timeseries[finalts:end])
+    xlabel!("t")
+    ylabel!("N(t)")
+    p3=scatter(0.0:1.0:51, timeseries[4950:end])
+    xlabel!("t")
+    ylabel!("N(t)")
+    plot(p1,p2,p3, layout=(3,1), size = (600,900), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/timeemedding_a11_Rickerconstant.pdf"))
+end
+
+let 
+    time = 5000
+    finalts=4800
+    timeseries = model_recursion(0.1,time,RickerPar(τ=3,p=0.6, a=11.0), RickerConstant_model)
+    plot(timeseries[finalts-3:end-3], timeseries[finalts:end])
+    xlabel!("N(t-3)")
+    ylabel!("N(t)")
+    # return timeseries[4502:5001]
+end
+
+
 
 let 
     tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=2,p=0.6), 50))
@@ -137,6 +169,7 @@ let
     ylabel!("N")
     xlims!(0.0,20.0)
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/aorbitdiagram_Rickerconstant_higherp.pdf"))
 end
 
 let
@@ -173,6 +206,7 @@ let
     ylabel!("N")
     xlims!(0.0,1.0)
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/porbitdiagram_Rickerconstant.pdf"))
 end
 
 let 
@@ -205,6 +239,7 @@ let
     ylabel!("N")
     xlims!(0.0,2.0)
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/alphaorbitdiagram_Rickerconstant.pdf"))
 end
 
 let 
@@ -237,6 +272,7 @@ let
     ylabel!("N")
     xlims!(0.0,0.5)
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/betaaorbitdiagram_Rickerconstant.pdf"))
 end
 
 
@@ -299,6 +335,36 @@ let
     ylabel!("N")
     xlims!(0.0,50.0)
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/aorbitdiagram_RickerBevertonDefault.pdf"))
+end
+
+let 
+    tau2data=flattenorbitdata(orbitdiagrams(RickerBeverton_model, "a", RickerPar(τ=2,α=0.0005, D=0.0005), 50; upperval=60))
+    tau3data=flattenorbitdata(orbitdiagrams(RickerBeverton_model, "a", RickerPar(τ=3,α=0.0005, D=0.0005), 50; upperval=60))
+    tau4data=flattenorbitdata(orbitdiagrams(RickerBeverton_model, "a", RickerPar(τ=4,α=0.0005, D=0.0005), 50; upperval=60))
+    tau5data=flattenorbitdata(orbitdiagrams(RickerBeverton_model, "a", RickerPar(τ=5,α=0.0005, D=0.0005), 50; upperval=60))
+    p2=scatter(tau2data[1], tau2data[2],color=:black)
+    title!("τ=2")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,60.0)
+    p3=scatter(tau3data[1], tau3data[2],color=:black)
+    title!("τ=3")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,60.0)
+    p4=scatter(tau4data[1], tau4data[2],color=:black)
+    title!("τ=4")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,60.0)
+    p5=scatter(tau5data[1], tau5data[2],color=:black)
+    title!("τ=5")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(0.0,60.0)
+    plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/aorbitdiagram_RickerBevertonlowalphalowD.pdf"))
 end
 
 #Leslie matrix version of the Ricker model
@@ -351,13 +417,15 @@ function first_elements(vec_of_vecs)
 end
 
 let 
-    time = 500
-    τval=3
-    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval, a=400,D=0.5,C=0.15), 0.1, LeslieMatrix)
+    time = 5000
+    τval=1
+    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval, a=25.0,α=1.5,β=2.0,D=0.5,C=0.15), 0.1, LeslieMatrix)
     plot(0:1:time,first_elements(timeseries))
     # return first_elements(timeseries)[end-50:end]
 end
 
+
+calc_g(RickerPar(τ=1, a=25.0,α=1.5,β=2.0,D=0.5,C=0.15))
 
 function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematrix)
     data = Vector{Vector{Float64}}(undef, length(τrange))
@@ -369,22 +437,26 @@ function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematr
 end
 
 let 
-    timeseries = model_recursion(0.1,5000,RickerPar(τ=0, a=300.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
+    timeseries = model_recursion(0.1,5000,RickerPar(a=25.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
     return timeseries[end-100:end]
+    # scatter(0.0:1.0:100.0, timeseries[end-100:end])
 end
+
+
 
 let
     τrange = 1:1:15
     # RIorbitdata = model_τorbit(τrange, RickerConstant_model, RickerPar(a=100, p=0.6), 50)
     # RIIorbitdata = model_τorbit(τrange, RickerBeverton_model, RickerPar(a=100,D=0.5,C=0.15), 50)
-    RLorbitdata = flattenorbitdata(LeslieMatrixOrbitDiagram(τrange, 50000, 100, RickerPar(a=300.0,α=1.5,β=2.0,D=0.5,C=0.15), 0.1, LeslieMatrix))
-    RLτ0data = model_recursion(0.1,5000,RickerPar(τ=0, a=300.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
+    RLorbitdata = flattenorbitdata(LeslieMatrixOrbitDiagram(τrange, 50000, 100, RickerPar(a=100.0,α=1.5,β=2.0,D=0.5,C=0.15), 0.1, LeslieMatrix))
+    RLτ0data = model_recursion(0.1,5000,RickerPar(τ=0, a=100.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
     RLτ0data_trans=RLτ0data[end-100:end]
-    p2=scatter(RLorbitdata[1], RLorbitdata[2],color=:black)
-    scatter!(zeros(length(RLτ0data_trans)), RLτ0data_trans, color=:black)
+    p2=scatter(RLorbitdata[1], RLorbitdata[2],color=:black, label="")
+    scatter!(zeros(length(RLτ0data_trans)), RLτ0data_trans, color=:black, label="")
     xlabel!("τ")
     ylabel!("N")
     xlims!(0.0,15.0)
+    # savefig(joinpath(abpath(), "figs/tauorbitdiagram_RickerRicker.pdf"))
 end
 
 #Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals and their own cohort)
@@ -415,3 +487,8 @@ let
     xlabel!("τ")
     ylabel!("N")
 end
+
+
+#Xppaut helper
+alowerconstraint(RickerPar(a=5.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6))
+ahigherconstraint(RickerPar(a=5.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6))

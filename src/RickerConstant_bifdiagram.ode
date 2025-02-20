@@ -1,20 +1,30 @@
 #RickerConstant Model
 #bifurcation diag of the discrete map f(x)=(x * exp(-α-β*x)) + a-b*exp(-K*(tau+1))*(p^(tau+1))*delay(x,tau)
-x'=(x * exp(-alpha-beta*x)) + (a-b*exp(-K*(tau+1)))*(p^(tau+1))*delay(x,tau)
+#tau = 2
+x(t+1)=(x * exp(-alpha-beta*x)) + (a-b*exp(-K*(tau+1)))*(p^(tau+1))*z
+y(t+1)= x
+z(t+1)= y
 init x=0.5
+init y=0.5
+init z=0.5
 x(0)=0.5
+y(0)=0.5
+z(0)=0.5
 
-#Tau bifurcation
-#par tau=3.0,alpha=0.1, beta=0.3, a=25.0, b=200, K=1.0, p=0.6
+#When tau=2,p=0.6 boundaries of a are 10.0, 14.5
+
+#Can't do tau bifurcation so do a and p bifurcations
 #a bifurction
-par a=5.0,tau=3.0,alpha=0.1, beta=0.3, b=200, K=1.0, p=0.6
+par a=13.0, p=0.6, tau=2.0, alpha=0.1, beta=0.3, b=200, K=1.0
+#p bifurction
+#par p=0.6, a=5.0, tau=2.0, alpha=0.1, beta=0.3, b=200, K=1.0
 
-@ delay=200, total=5000,method=discrete,nout=2
-@ autoxmin=0.0,autoxmax=15.0,autoymin=-2,autoymax=2
-#tau bifurcation
-#@ dsmax=0.05,dsmin=.00001,parmin=0.0,parmax=10.0, ds=1.0
+
+
+@ total=5000,method=discrete,nout=2
+@ autoxmin=10.0,autoxmax=14.5,autoymin=-0.5,autoymax=15.0
 #a bifurcation
-@ dsmax=0.05,dsmin=.00001,parmin=0.0,parmax=15.0, ds=0.02
+@ dsmax=0.05,dsmin=.00001,parmin=10.0,parmax=14.5, ds=0.02
 
 @ maxstor 10000000,npr=10 
 @ xlo=0,xhi=5000,ylo=0,yhi=50,xp=t,yp=x
