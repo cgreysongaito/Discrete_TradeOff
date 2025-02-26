@@ -1,6 +1,11 @@
 include("packages.jl")
 include("TradeOffs_CommonCode.jl")
 
+#TODO LIST
+#make two scripts for beverton holt and Ricker
+#make function that calculates lower and upperbounds of a for all tau
+#make function that calculates lower and upper bounds of p for all tau
+
 ##Beverton Holt Model
 #Density independent survival of immature individuals
 let 
@@ -66,9 +71,25 @@ let
 end
 
 #Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)
-#TODO
+
 
 ##Ricker Model
+
+#Density independent survival of immature individuals
+#Check that beta can remove the bell shape in Ricker constant
+let 
+    par=RickerPar(p=0.4, a=0.5,b=200.0,α=1.5,β=0.6)
+    println(alowerconstraint(par))
+    println(ahigherconstraint(par))
+    data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par, 50; upperval=8))
+    scatter(data[1], data[2],color=:black)
+    xlabel!("τ")
+    ylabel!("N")
+end
+
+test1=1.0:0.1:10.0
+test2=1.0:0.1:3.5
+intersect(test1,test2)
 
 let 
     tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=2), 50))
@@ -169,7 +190,7 @@ let
     ylabel!("N")
     xlims!(0.0,20.0)
     plot(p2,p3,p4,p5, layout=(4,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
-    savefig(joinpath(abpath(), "figs/aorbitdiagram_Rickerconstant_higherp.pdf"))
+    # savefig(joinpath(abpath(), "figs/aorbitdiagram_Rickerconstant_higherp.pdf"))
 end
 
 let
@@ -437,9 +458,9 @@ function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematr
 end
 
 let 
-    timeseries = model_recursion(0.1,5000,RickerPar(a=25.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
-    return timeseries[end-100:end]
-    # scatter(0.0:1.0:100.0, timeseries[end-100:end])
+    timeseries = model_recursion(0.1,5000,RickerPar(τ=0, a=100.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
+    # return timeseries[end-100:end]
+    scatter(0.0:1.0:100.0, timeseries[end-100:end])
 end
 
 
@@ -448,8 +469,9 @@ let
     τrange = 1:1:15
     # RIorbitdata = model_τorbit(τrange, RickerConstant_model, RickerPar(a=100, p=0.6), 50)
     # RIIorbitdata = model_τorbit(τrange, RickerBeverton_model, RickerPar(a=100,D=0.5,C=0.15), 50)
-    RLorbitdata = flattenorbitdata(LeslieMatrixOrbitDiagram(τrange, 50000, 100, RickerPar(a=100.0,α=1.5,β=2.0,D=0.5,C=0.15), 0.1, LeslieMatrix))
-    RLτ0data = model_recursion(0.1,5000,RickerPar(τ=0, a=100.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
+    par=RickerPar(τ=0, a=100.0,α=1.5,β=0.1,D=0.9,C=0.15)
+    RLorbitdata = flattenorbitdata(LeslieMatrixOrbitDiagram(τrange, 50000, 100, par, 0.1, LeslieMatrix))
+    RLτ0data = model_recursion(0.1,5000,par, RickerLeslie_τ0_model)
     RLτ0data_trans=RLτ0data[end-100:end]
     p2=scatter(RLorbitdata[1], RLorbitdata[2],color=:black, label="")
     scatter!(zeros(length(RLτ0data_trans)), RLτ0data_trans, color=:black, label="")
@@ -459,6 +481,8 @@ let
     # savefig(joinpath(abpath(), "figs/tauorbitdiagram_RickerRicker.pdf"))
 end
 
+calc_g(RickerPar(τ=0, a=74,α=1.5,β=2.0,D=0.5,C=0.15))
+alowerconstraint(RickerPar(τ=0, a=10.0,α=1.5,β=2.0,D=0.5,C=0.15))
 #Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals and their own cohort)
 function LeslieMatrix_AdultCohort(τval, para, AJvector)
     local_par = deepcopy(para)
@@ -490,5 +514,20 @@ end
 
 
 #Xppaut helper
-alowerconstraint(RickerPar(a=5.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6))
-ahigherconstraint(RickerPar(a=5.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6))
+tau2par=RickerPar(τ=2.0, a=5.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6)
+alowerconstraint(tau2par)
+ahigherconstraint(tau2par)
+calc_m(tau2par)
+
+tau3par=RickerPar(τ=3.0, a=5.0,α=0.1,β=0.3,b=200,K=1.0)
+alowerconstraint(tau3par)
+
+let 
+    tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=2,p=0.6,α=0.1,β=0.3,b=200,K=1.0), 50))
+    p2=scatter(tau2data[1], tau2data[2],color=:black)
+    title!("τ=2")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(10.0,14.5)
+    ylims!(0.0,15.0)
+end

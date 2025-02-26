@@ -1,0 +1,32 @@
+#RickerBevertonHolt Model
+#bifurcation diag 
+#tau = 2
+x(t+1)=(x * exp(-alpha-beta*x)) + exp(-D-C*w)*w
+y(t+1)= (a-b*exp(-K*(tau+1))) * exp(-D-C*(a-b*exp(-K*(tau+1)))*x)*x
+z(t+1)= exp(-D-C*y)*y
+w(t+1)= exp(-D-C*z)*z
+init x=10.0
+init y=10.0
+init z=10.0
+init w=10.0
+x(0)=10.0
+y(0)=10.0
+z(0)=10.0
+w(0)=10.0
+
+#When tau=3, lower boundary of a is 3.7
+
+#Can't do tau bifurcation so do a bifurcations
+#a bifurction
+par a=15.0, tau=3.0, alpha=0.1, beta=0.3, b=200, K=1.0, D=0.1, C=0.1
+
+
+
+@ total=5000,method=discrete,nout=2
+@ autoxmin=3.7,autoxmax=20.0,autoymin=-0.5,autoymax=15.0
+#a bifurcation
+@ dsmax=0.05,dsmin=.00001,parmin=3.7,parmax=20.0, ds=0.02
+
+@ maxstor 10000000,npr=10 
+@ xlo=0,xhi=5000,ylo=0,yhi=50,xp=t,yp=x
+done
