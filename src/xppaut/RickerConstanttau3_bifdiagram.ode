@@ -18,13 +18,14 @@ w(0)=0.5
 
 #Can't do tau bifurcation so do a and p bifurcations
 #a bifurction
-par a=6.0, p=0.6, tau=3.0, alpha=0.1, beta=0.3, b=200, K=1.0
+#par a=6.0, p=0.6, tau=3.0, alpha=0.1, beta=0.3, b=200, K=1.0
+par a=6.0, p=0.7, tau=3.0, alpha=0.1, beta=0.3, b=200, K=1.0
 
-@ total=5000,method=discrete,nout=3
-@ autoxmin=5.0,autoxmax=20.0,autoymin=-0.5,autoymax=15.0
+@ total=5000,method=discrete,nout=2
+@ autoxmin=3.5,autoxmax=20.0,autoymin=-0.5,autoymax=15.0
 #a bifurcation
-@ dsmax=0.02,dsmin=.00001,parmin=5.0,parmax=20.0, ds=0.02, npr=40, nmax=400
+@ dsmax=0.01,dsmin=.00000000000000001,parmin=3.5,parmax=20.0, ds=0.02, npr=40, nmax=400
 
-@ maxstor 10000000,npr=10 
+@ maxstor 10000000 
 @ xlo=0,xhi=5000,ylo=0,yhi=50,xp=t,yp=x
 done

@@ -522,6 +522,14 @@ calc_m(tau2par)
 tau3par=RickerPar(τ=3.0, a=5.0,α=0.1,β=0.3,b=200,K=1.0)
 alowerconstraint(tau3par)
 
+tau4par=RickerPar(τ=4.0, a=5.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6)
+alowerconstraint(tau4par)
+ahigherconstraint(tau4par)
+
+tau5par=RickerPar(τ=5.0, a=5.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6)
+alowerconstraint(tau5par)
+ahigherconstraint(tau5par)
+
 let 
     tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=2,p=0.6,α=0.1,β=0.3,b=200,K=1.0), 50))
     p2=scatter(tau2data[1], tau2data[2],color=:black)
