@@ -50,8 +50,11 @@ let
     bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
     hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
     phigh=[phigherconstraint(RickerPar(a=aval,τ=3.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
+    pddata=perioddoublecurve(arange, 3)
+    # return pddata
     plot(bp_data.a, bp_data.Lowp, label="Transcritical",lw=2)
     plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker",lw=2)
+    plot!(pddata[:,1], pddata[:,2], label="Period doubling",lw=2)
     plot!(arange, fillbottom, fillrange = phigh, fillalpha = 0.2, c = 1, label = "Parameter space")
     xlabel!("a")
     ylabel!("p")

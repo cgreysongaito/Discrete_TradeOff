@@ -309,6 +309,82 @@ let
     ylabel!("N")
 end
 
+#Using leslie matrix to find the period doubling bifurcation line for a and p
+
+function perioddoublelesliematrix(τval, para)
+    local_par = deepcopy(para)
+    local_par.τ = τval
+    @unpack a, b, K, p, τ = local_par
+    matrix = zeros(Float64,τval+1,τval+1)
+    matrix[1,1] = 1-(a-b*exp(-K*(τ+1)))*p^(τ+1)
+    matrix[1,τval+1] = (a-b*exp(-K*(τ+1)))*p^(τ+1)
+    for i in 2:τval+1
+        matrix[i,i-1] = 1
+    end
+    return matrix
+end
+
+function findperioddouble(aval, τval)
+    prange=0.1:0.001:1.0
+    data=zeros(Float64, length(prange))
+    for pi in eachindex(prange)
+        matrix = perioddoublelesliematrix(τval, RickerPar(a=aval,α=0.1,β=0.3,b=200,K=1.0,p=prange[pi]))
+        # domeig=maximum(abs.(real(eigen(matrix).values)))
+        # if domeig>1.0 && !isapprox(domeig, 1.0)
+        #     return prange[pi]
+        # end
+        data[pi] = maximum(abs.(real(eigen(matrix).values)))
+    end
+    return data
+end
+
+findperioddouble(10.0, 3)
+let 
+    plot(0.1:0.001:1.0,findperioddouble(10.0, 3))
+    xlabel!("p")
+    ylabel!("|λ|")
+    title!("a=10.0, τ=3")
+end
+
+function eigencalcb(aval, τval)
+    prange=0.5:0.000001:1.0
+    data=zeros(Float64, length(prange))
+    for pi in eachindex(prange)
+        matrix = perioddoublelesliematrix(τval, RickerPar(a=aval,α=0.1,β=0.3,b=200,K=1.0,p=prange[pi]))
+        data[pi] = maximum(abs.(real(eigen(matrix).values)))
+    end
+    return data
+end
+
+eigencalcb(10.0, 3.0)
+
+let 
+    plot(0.5:0.00001:1.0,eigencalc(10.0, 3.0))
+end
+
+function perioddoublecurve(arange, τval)
+    pdata = Vector{Union{Float64, Nothing}}(undef, length(arange))
+    adata = Vector{Union{Float64, Nothing}}(undef, length(arange))
+    @threads for ai in eachindex(arange)
+        pdata[ai] = findperioddouble(arange[ai], τval)
+        adata[ai] = arange[ai]
+    end
+    combined_data = hcat(adata, pdata)
+    filtered_data = combined_data[.!isnothing.(pdata), :]
+    return filtered_data
+end
+
+perioddoublecurve(4.4:0.1:15.0, 3)
+
+let 
+    arange=5.0:0.1:15.0
+    plot(arange,perioddoublecurve(arange, 3))
+    xlims!(5.0,15.0)
+    ylims!(0.0,1.0)
+    
+end
+
+
 #Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
 #Attempt where mix Ricker model with bevertonholt solution to fraction of immature individuals that survive to t+1
 
