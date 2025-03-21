@@ -189,5 +189,5 @@ function flattenorbitdata(orbitdata)
 end
 
 function abpath()
-    replace(@__DIR__, "src" => "")
+    replace(@__DIR__, "src/julia" => "")
 end

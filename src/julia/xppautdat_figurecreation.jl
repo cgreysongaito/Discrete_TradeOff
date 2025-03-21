@@ -50,7 +50,7 @@ let
     bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
     hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
     phigh=[phigherconstraint(RickerPar(a=aval,τ=3.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
-    pddata=perioddoublecurve(arange, 3)
+    pddata=perioddoublecurve(4.3:0.1:15.0, 3)
     # return pddata
     plot(bp_data.a, bp_data.Lowp, label="Transcritical",lw=2)
     plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker",lw=2)
@@ -61,6 +61,7 @@ let
     xlims!(0.0, 15.0)
     ylims!(0.0, 1.0)
     title!("τ = 3.0")
+    savefig(joinpath(abpath(), "figs/RickerConstanttau3wPD.pdf"))
 end
 
 let 
@@ -73,6 +74,7 @@ let
     phigh=[phigherconstraint(RickerPar(a=aval,τ=4.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
     plot(bp_data.a, bp_data.Lowp, label="Transcritical",lw=2)
     plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker",lw=2)
+    plot!(pddata[:,1], pddata[:,2], label="Period doubling",lw=2)
     plot!(arange, fillbottom, fillrange = phigh, fillalpha = 0.2, c = 1, label = "Parameter space")
     xlabel!("a")
     ylabel!("p")
@@ -88,9 +90,11 @@ let
     data=cleanxppautdat("src/xppaut/RickerConstanttau5.dat")
     bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
     hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
+    pddata=perioddoublecurve(5.6:0.1:22.0, 5)
     phigh=[phigherconstraint(RickerPar(a=aval,τ=5.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
     plot(bp_data.a, bp_data.Lowp, label="Transcritical",lw=2)
     plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker",lw=2)
+    plot!(pddata[:,1], pddata[:,2], label="Period doubling",lw=2)
     plot!(arange, fillbottom, fillrange = phigh, fillalpha = 0.2, c = 1, label = "Parameter space")
     xlabel!("a")
     ylabel!("p")
@@ -120,10 +124,11 @@ let
     plot!(hp_datatau4.a, hp_datatau4.Lowp, lw=2, linestyle=:dash, color=:red,label="HP τ=4")
     plot!(bp_datatau5.a, bp_datatau5.Lowp, lw=2, linestyle=:solid,color=:green, label="BP τ=5")
     plot!(hp_datatau5.a, hp_datatau5.Lowp, lw=2, linestyle=:dash, color=:green, label="HP τ=5")
-    
+    xlims!(0.0,22.0)
     ylims!(0.0, 1.0)
     xlabel!("a")
     ylabel!("p")
+    savefig(joinpath(abpath(), "figs/apbifurcation_RickerConstant.pdf"))
 end
 
 
