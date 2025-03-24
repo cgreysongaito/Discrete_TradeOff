@@ -149,7 +149,7 @@ let
     xlabel!("t")
     ylabel!("N(t)")
     plot(p1,p2,p3, layout=(3,1), size = (600,900), legend=false, guidefontsize=10, ms=2)
-    savefig(joinpath(abpath(), "figs/timeemedding_a11_Rickerconstant.pdf"))
+    # savefig(joinpath(abpath(), "figs/timeemedding_a11_Rickerconstant.pdf"))
 end
 
 let 
