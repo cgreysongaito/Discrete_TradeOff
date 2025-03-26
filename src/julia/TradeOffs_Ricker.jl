@@ -2,76 +2,8 @@ include("packages.jl")
 include("TradeOffs_CommonCode.jl")
 
 #TODO LIST
-#make two scripts for beverton holt and Ricker
 #make function that calculates lower and upperbounds of a for all tau
 #make function that calculates lower and upper bounds of p for all tau
-
-##Beverton Holt Model
-#Density independent survival of immature individuals
-let 
-    time = 500
-    timeseries = model_recursion(0.1,time,BevHoltPar(τ=3,p=0.55), BevertonHolt_model)
-    plot(0:1:time,timeseries)
-end
-
-#issue with p=0.55 and τ=1 - shoots off to infinity
-
-let     
-    τrange = 2:1:7
-    BHbifurcdata_p55 = model_τbifurc(τrange, BevertonHolt_model, BevHoltPar(), 0.55)
-    BHbifurcdata_p5 = model_τbifurc(τrange, BevertonHolt_model, BevHoltPar(), 0.5)
-    BHbifurcdata_p45 = model_τbifurc(τrange, BevertonHolt_model, BevHoltPar(), 0.45)
-    scatter(τrange,BHbifurcdata_p55, label="p=0.55")
-    scatter!(τrange,BHbifurcdata_p5, label="p=0.5")
-    scatter!(τrange,BHbifurcdata_p45, label="p=0.45")
-    xlabel!("τ")
-    ylabel!("N")
-end
-
-#Code max 0 or equilibrium point for changing tau
-function BevHoltI_equi(para)
-    @unpack α,β = para
-    m = calc_m(para)
-    equi = ((1+α)*m-α)/(β*(1-m))
-    if equi>0
-        return equi
-    else
-        return 0
-    end
-end
-
-let 
-    datap040=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.4)) for τval in 0:1:6]
-    datap050=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.5)) for τval in 0:1:6]
-    datap055=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.55)) for τval in 0:1:6]
-    equifig = scatter(0:1:6,datap040, label="p=0.4")
-    scatter!(0:1:6,datap050, label="p=0.5")
-    scatter!(0:1:6,datap055, label="p=0.55")
-    xlabel!("τ")
-    ylabel!("N*(τ)")
-end
-
-
-#Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
-let 
-    time = 500
-    timeseries = model_recursion(0.1,time,BevHoltPar(τ=3,p=0.55), BevertonHolt_modelII)
-    plot(0:1:time,timeseries)
-end
-
-let
-    τrange = 2:1:7
-    BHIorbitdata = model_τorbit(τrange, BevertonHolt_model, BevHoltPar(p=0.55), 50)
-    BHIIorbitdata = model_τorbit(τrange, BevertonHolt_modelII, BevHoltPar(), 50)
-    test = plot(ylims=(0,5), xlims=(2,7))
-    plot_combination(τrange, BHIorbitdata,:red)
-    plot_combination(τrange, BHIIorbitdata,:black)
-    xlabel!("τ")
-    ylabel!("N")
-end
-
-#Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)
-
 
 ##Ricker Model
 
@@ -325,6 +257,51 @@ function firstiteratejacobian(τval, para)
     return matrix
 end
 
+test=firstiteratejacobian(3, RickerPar(a=10.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6))
+eigen(test).values
+
+calc_m(RickerPar(τ=3,a=10.0,α=0.1,β=0.3,b=200,K=1.0,p=0.63))
+
+function eigenvals(aval, τval)
+    prange=0.1:0.01:1.0
+    eig1=[]
+    eig2=[]
+    eig3=[]
+    eig4=[]
+    maxeig=[]
+    endpi=0
+    for pi in eachindex(prange)
+        local_par=RickerPar(τ=τval, a=aval,α=0.1,β=0.3,b=200,K=1.0,p=prange[pi])
+        if calc_m(local_par)>=1.0
+            endpi=pi-1
+            break
+        else
+            matrix = firstiteratejacobian(τval, local_par)
+            eigs = real(eigen(matrix).values)
+            maxeigval=maximum(abs.(eigs))
+            push!(eig1, eigs[1])
+            push!(eig2, eigs[2])
+            push!(eig3, eigs[3])
+            push!(eig4, eigs[4])
+            push!(maxeig, maxeigval)
+        end
+    end
+    return [prange[1:endpi],eig1,eig2,eig3,eig4, maxeig]
+end
+
+let 
+    eigs = eigenvals(10.0, 3)
+    plot(eigs[1],eigs[2],label="eig1")
+    plot!(eigs[1],eigs[3],label="eig2")
+    plot!(eigs[1],eigs[4],label="eig3")
+    plot!(eigs[1],eigs[5],label="eig4")
+    hline!([1.0], linestyle=:dash, color=:black, linewidth=1.5, label="")
+    hline!([-1.0], linestyle=:dash, color=:black, linewidth=1.5, label="")
+    xlabel!("p")
+    ylabel!("λ")
+    title!("a=10.0, τ=3")
+end
+
 function findperioddouble(aval, τval)
     if aval<5.0
         prange=0.7:0.00001:1.0
@@ -354,82 +331,18 @@ end
 
 perioddoublecurve(4.8:0.1:15.0, 3)
 
-#Incorrect use of leslie matrix
-# #Using leslie matrix to find the period doubling bifurcation line for a and p
+#symbolic differentiation
+using SymPy
+@syms x y z
+@syms α β m
+f(x,y,z)= exp(-α-β*(exp(-α-β*x)*x+m*z))*(exp(-α-β*x)*x+m*z)+m*y
+diff(f(x,y,z),x)
+diff(f(x,y,z),y)
+diff(f(x,y,z),z)
 
-# function perioddoublelesliematrix(τval, para)
-#     local_par = deepcopy(para)
-#     local_par.τ = τval
-#     @unpack a, b, K, p, τ = local_par
-#     matrix = zeros(Float64,τval+1,τval+1)
-#     matrix[1,1] = 1-(a-b*exp(-K*(τ+1)))*p^(τ+1)
-#     matrix[1,τval+1] = (a-b*exp(-K*(τ+1)))*p^(τ+1)
-#     for i in 2:τval+1
-#         matrix[i,i-1] = 1
-#     end
-#     return matrix
-# end
+g(x)=exp(-α-β*(exp(-α-β*x)*x+m*((exp(-α-β*x)*x)/(1-m))))*(exp(-α-β*x)*x+m*((exp(-α-β*x)*x)/(1-m)))+m*x-x
 
-# function findperioddouble(aval, τval)
-#     prange=0.1:0.001:1.0
-#     data=zeros(Float64, length(prange))
-#     for pi in eachindex(prange)
-#         matrix = perioddoublelesliematrix(τval, RickerPar(a=aval,α=0.1,β=0.3,b=200,K=1.0,p=prange[pi]))
-#         # domeig=maximum(abs.(real(eigen(matrix).values)))
-#         # if domeig>1.0 && !isapprox(domeig, 1.0)
-#         #     return prange[pi]
-#         # end
-#         data[pi] = maximum(abs.(real(eigen(matrix).values)))
-#     end
-#     return data
-# end
-
-# findperioddouble(10.0, 3)
-# let 
-#     plot(0.1:0.001:1.0,findperioddouble(10.0, 3))
-#     xlabel!("p")
-#     ylabel!("|λ|")
-#     title!("a=10.0, τ=3")
-# end
-
-# function eigencalcb(aval, τval)
-#     prange=0.5:0.000001:1.0
-#     data=zeros(Float64, length(prange))
-#     for pi in eachindex(prange)
-#         matrix = perioddoublelesliematrix(τval, RickerPar(a=aval,α=0.1,β=0.3,b=200,K=1.0,p=prange[pi]))
-#         data[pi] = maximum(abs.(real(eigen(matrix).values)))
-#     end
-#     return data
-# end
-
-# eigencalcb(10.0, 3.0)
-
-# let 
-#     plot(0.5:0.00001:1.0,eigencalc(10.0, 3.0))
-# end
-
-# function perioddoublecurve(arange, τval)
-#     pdata = Vector{Union{Float64, Nothing}}(undef, length(arange))
-#     adata = Vector{Union{Float64, Nothing}}(undef, length(arange))
-#     @threads for ai in eachindex(arange)
-#         pdata[ai] = findperioddouble(arange[ai], τval)
-#         adata[ai] = arange[ai]
-#     end
-#     combined_data = hcat(adata, pdata)
-#     filtered_data = combined_data[.!isnothing.(pdata), :]
-#     return filtered_data
-# end
-
-# perioddoublecurve(4.4:0.1:15.0, 3)
-
-# let 
-#     arange=5.0:0.1:15.0
-#     plot(arange,perioddoublecurve(arange, 3))
-#     xlims!(5.0,15.0)
-#     ylims!(0.0,1.0)
-    
-# end
-
+solve(exp(-α-β*(exp(-α-β*x)*x+m*((exp(-α-β*x)*x)/(1-m))))*(exp(-α-β*x)*x+m*((exp(-α-β*x)*x)/(1-m)))+m*x-x)
 
 #Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
 #Attempt where mix Ricker model with bevertonholt solution to fraction of immature individuals that survive to t+1
