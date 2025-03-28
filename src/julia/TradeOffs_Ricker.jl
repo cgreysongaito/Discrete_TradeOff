@@ -257,13 +257,85 @@ function firstiteratejacobian(τval, para)
     return matrix
 end
 
-test=firstiteratejacobian(3, RickerPar(a=10.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6))
+function eigenvals(pval, τval)
+    arange=3.0:0.0001:9.0
+    eig1=[]
+    eig2=[]
+    eig3=[]
+    eig4=[]
+    maxeig=[]
+    endai=0
+    for ai in eachindex(arange)
+        local_par=RickerPar(τ=τval, a=arange[ai],α=0.1,β=0.3,b=200,K=1.0,p=pval)
+        if calc_m(local_par)>=1.0
+            endai=ai-1
+            break
+        else
+            matrix = firstiteratejacobian(τval, local_par)
+            eigs = real(eigen(matrix).values)
+            maxeigval=maximum(abs.(eigs))
+            push!(eig1, eigs[1])
+            push!(eig2, eigs[2])
+            push!(eig3, eigs[3])
+            push!(eig4, eigs[4])
+            push!(maxeig, maxeigval)
+        end
+    end
+    return [arange[1:endai],eig1,eig2,eig3,eig4, maxeig]
+end
+
+function findflip(eigdata)
+    data=[]
+    for i in 2:length(eigdata)-1
+        for j in 1:length(eigdata[i])
+            if isapprox(eigdata[i][j], 1.0,atol=1e-5) || isapprox(eigdata[i][j], -1.0,atol=1e-5)
+                push!(data, eigdata[1][j])
+            end
+        end
+    end
+    return data
+end
+findflip(eigenvals(0.7, 3))
+
+test =eigenvals(0.7, 3)
+isapprox(test[2][3],-0.25,atol=1e-3)
+test[2][end]
+test[1][end]
+let 
+    eigs = eigenvals(0.7, 3)
+    plot(eigs[1],eigs[2],label="eig1")
+    plot!(eigs[1],eigs[3],label="eig2")
+    plot!(eigs[1],eigs[4],label="eig3")
+    plot!(eigs[1],eigs[5],label="eig4")
+    hline!([1.0], linestyle=:dash, color=:black, linewidth=1.5, label="")
+    hline!([-1.0], linestyle=:dash, color=:black, linewidth=1.5, label="")
+    xlabel!("a")
+    ylabel!("λ")
+    title!("p=0.7, τ=3")
+end
+
+function seconditeratejacobian(τval, para)
+    local_par = deepcopy(para)
+    local_par.τ = τval
+    m=calc_m(local_par)
+    @unpack α = local_par
+    matrix = zeros(Float64,τval+1,τval+1)
+    matrix[1,1] = ((1-m)^2)*(1+log(1-m)+α)^2
+    matrix[1,3] = m
+    matrix[1,τval+1] = m*(1-m)*(1+log(1-m)+α)
+    matrix[2,1] = (1-m)*(1+log(1-m)+α)
+    matrix[2,4] = m
+    for i in 3:τval+1
+        matrix[i,i-1] = 1
+    end
+    return matrix
+end
+
+test=seconditeratejacobian(3, RickerPar(a=10.0,α=0.1,β=0.3,b=200,K=1.0,p=0.6))
 eigen(test).values
 
-calc_m(RickerPar(τ=3,a=10.0,α=0.1,β=0.3,b=200,K=1.0,p=0.63))
-
-function eigenvals(aval, τval)
-    prange=0.1:0.01:1.0
+function eigenvals2nditerate(aval, τval)
+    prange=0.1:0.00001:1.0
     eig1=[]
     eig2=[]
     eig3=[]
@@ -276,7 +348,7 @@ function eigenvals(aval, τval)
             endpi=pi-1
             break
         else
-            matrix = firstiteratejacobian(τval, local_par)
+            matrix = seconditeratejacobian(τval, local_par)
             eigs = real(eigen(matrix).values)
             maxeigval=maximum(abs.(eigs))
             push!(eig1, eigs[1])
@@ -290,7 +362,7 @@ function eigenvals(aval, τval)
 end
 
 let 
-    eigs = eigenvals(10.0, 3)
+    eigs = eigenvals2nditerate(10.0, 3)
     plot(eigs[1],eigs[2],label="eig1")
     plot!(eigs[1],eigs[3],label="eig2")
     plot!(eigs[1],eigs[4],label="eig3")
