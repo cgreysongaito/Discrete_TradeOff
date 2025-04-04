@@ -155,7 +155,7 @@ function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar
         else 
             local_par.τ = range[i]
         end
-        timeseries = model_recursion(10.0, 10000, local_par, model_func)
+        timeseries = model_recursion(10.0, 1000000, local_par, model_func)
         dataN[i] = timeseries[end-finalts:end]
     end
     return [range,dataN]

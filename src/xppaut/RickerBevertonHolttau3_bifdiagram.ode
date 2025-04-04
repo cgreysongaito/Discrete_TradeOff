@@ -1,7 +1,7 @@
 #RickerBevertonHolt Model
 #bifurcation diag 
 #tau = 2
-x(t+1)=(x * exp(-alpha-beta*x)) + (D/(D*(1+D)^(tau+1)+((1+D)^(tau+1)-1)*(a-b*exp(-K*(tau+1)))*w))*(a-b*exp(-K*(tau+1)))*w
+x(t+1)=(x * exp(-alpha-beta*x)) + (D/(D*(1+D)^(tau+1)+((1+D)^(tau+1)-1)*C*(a-b*exp(-K*(tau+1)))*w))*(a-b*exp(-K*(tau+1)))*w
 y(t+1)= x
 z(t+1)= y
 w(t+1)= z
@@ -18,15 +18,31 @@ w(0)=0.5
 
 #Can't do tau bifurcation so do a bifurcations
 #a bifurction
-par a=50.0, tau=3.0, alpha=0.1, beta=0.3, b=200, K=1.0, D=0.1, C=0.1
+#par a=5.0,D=0.00001, alpha=0.1, tau=3.0 , beta=0.3, b=200, K=1.0, C=0.1
+#@ autoxmin=3,autoxmax=20.0,autoymin=-0.5,autoymax=15.0
+#@ dsmax=0.05,dsmin=.00001,parmin=3,parmax=20.0, ds=0.02, nmax=300,npr=30
+
+#D bifurcation
+#par D=0.0001, a=5.0, alpha=0.01, tau=3.0, beta=0.01, b=200, K=1.0, C=0.1
+#@ autoxmin=0.0001,autoxmax=20.0,autoymin=-0.5,autoymax=15.0
+#@ dsmax=0.05,dsmin=.00001,parmin=0.0001,parmax=20.0, ds=0.02, nmax=300,npr=50
+
+#C bifurcation
+#par C=0.001, D=0.0001, a=5.0, alpha=0.01, tau=3.0, beta=0.01, b=200, K=1.0
+#@ autoxmin=0.0001,autoxmax=600.0,autoymin=-0.5,autoymax=15.0
+#@ dsmax=0.05,dsmin=.001,parmin=0.0001,parmax=600.0, ds=0.02, nmax=6000,npr=50
+
+#alpha bifurcation
+#par alpha=0.01, C=0.1, D=0.0001, a=5.0, tau=3.0, beta=0.01, b=200, K=1.0
+#@ autoxmin=0.0001,autoxmax=100.0,autoymin=-0.5,autoymax=15.0
+#@ dsmax=0.05,dsmin=.001,parmin=0.0001,parmax=100.0, ds=0.02, nmax=6000,npr=50
+
+#beta bifurcation
+par beta=0.0001,C=1, D=0.0001, a=5.0, alpha=0.01, tau=3.0, b=200, K=1.0
+@ autoxmin=0.0001,autoxmax=600.0,autoymin=-0.5,autoymax=15.0
+@ dsmax=0.05,dsmin=.001,parmin=0.0001,parmax=600.0, ds=0.02, nmax=6000,npr=50
 
 
-
-@ total=5000,method=discrete,nout=2
-@ autoxmin=3.7,autoxmax=20.0,autoymin=-0.5,autoymax=15.0
-#a bifurcation
-@ dsmax=0.05,dsmin=.00001,parmin=3.7,parmax=20.0, ds=0.02, nmax=300,npr=30
-
-@ maxstor 10000000,npr=10 
-@ xlo=0,xhi=5000,ylo=0,yhi=50,xp=t,yp=x
+@ total=5000,method=discrete,nout=1,maxstor 10000000
+@ xlo=0,xhi=5000,ylo=0,yhi=50,xp=t,yp=x 
 done

@@ -9,8 +9,7 @@ include("TradeOffs_CommonCode.jl")
 
 #Density independent survival of immature individuals
 #Check that beta can remove the bell shape in Ricker constant
-let 
-    par=RickerPar(p=0.4, a=0.5,b=200.0,α=1.5,β=0.6)
+let #figure of RickerConstant tau=3 showing two period doubling to something?   par=RickerPar(p=0.4, a=0.5,b=200.0,α=1.5,β=0.6)
     println(alowerconstraint(par))
     println(ahigherconstraint(par))
     data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par, 50; upperval=8))
@@ -19,9 +18,17 @@ let
     ylabel!("N")
 end
 
-test1=1.0:0.1:10.0
-test2=1.0:0.1:3.5
-intersect(test1,test2)
+let 
+    tau3data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=3,p=0.7, α=0.1, β=0.3, b=200, K=1.0), 500))
+    p3=scatter(tau3data[1], tau3data[2],color=:black)
+    title!("τ=3")
+    xlabel!("a")
+    ylabel!("N")
+    xlims!(7.3,7.8)
+    plot(p3, layout=(1,1), size = (500,400), legend=false, guidefontsize=10, ms=2)
+    savefig(joinpath(abpath(), "figs/aorbitdiagram_Rickerconstanttau3.pdf"))
+end
+
 
 let 
     tau2data=flattenorbitdata(orbitdiagrams(RickerConstant_model, "a", RickerPar(τ=2), 50))
@@ -64,6 +71,23 @@ let
     ylabel!("N(t)")
     plot(p1,p2, layout=(2,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
     savefig(joinpath(abpath(), "figs/timeemedding_a108_Rickerconstant.pdf"))
+end
+
+let 
+    time = 1000000
+    finalts=999500
+    timeseries = model_recursion(19.51518,time,RickerPar(τ=3,p=0.7, a=7.611502,α=0.1, β=0.3, b=200, K=1.0), RickerConstant_model)
+    timeseries2 = model_recursion(timeseries[end],time,RickerPar(τ=3,p=0.7, a=7.611502,α=0.1, β=0.3, b=200, K=1.0), RickerConstant_model)
+    timeseries3 = model_recursion(timeseries2[end],time,RickerPar(τ=3,p=0.7, a=7.611502,α=0.1, β=0.3, b=200, K=1.0), RickerConstant_model)
+
+    # p1=scatter(timeseries[finalts-3:end-3], timeseries[finalts:end])
+    # xlabel!("N(t-3)")
+    # ylabel!("N(t)")
+    p2=scatter(0.0:1.0:501, timeseries3[finalts:end])
+    xlabel!("t")
+    ylabel!("N(t)")
+    plot(p2, layout=(2,1), size = (500,400), legend=false, guidefontsize=10, ms=2)
+    # savefig(joinpath(abpath(), "figs/timeemedding_a108_Rickerconstant.pdf"))
 end
 
 
@@ -255,7 +279,21 @@ function firstiteratejacobian(τval, para)
         matrix[i,i-1] = 1
     end
     return matrix
+end #TODO update this to 
+
+function firstiteratejacobian(τval, para)
+    local_par = deepcopy(para)
+    local_par.τ = τval
+    @unpack a, b, K, p, τ, α,β = local_par
+    matrix = zeros(Float64,τval+1,τval+1)
+    matrix[1,1] = exp(-α-β*x)*(1-β*x)
+    matrix[1,τval+1] = calc_m(local_par)
+    for i in 2:τval+1
+        matrix[i,i-1] = 1
+    end
+    return matrix
 end
+
 
 function eigenvals(pval, τval)
     arange=3.0:0.0001:9.0

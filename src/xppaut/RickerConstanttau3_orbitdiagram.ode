@@ -1,0 +1,30 @@
+#RickerConstant Model
+#orbit diag of the discrete map f(x)=(x * exp(-α-β*x)) + a-b*exp(-K*(tau+1))*(p^(tau+1))*delay(x,tau)
+#tau = 3
+x(t+1)=(x * exp(-alpha-beta*x)) + (a-b*exp(-K*(tau+1)))*(p^(tau+1))*w
+y(t+1)= x
+z(t+1)= y
+w(t+1)=z
+init x=0.5
+init y=0.5
+init z=0.5
+init w=0.5
+x(0)=0.5
+y(0)=0.5
+z(0)=0.5
+w(0)=0.5
+a'=a
+init a=7.3
+a(0)=7.3
+
+par p=0.7, tau=3.0, alpha=0.1, beta=0.3, b=200, K=1.0
+
+
+@ total=100000,method=discrete,nout=1
+@ maxstor 10000 
+@ trans=9500
+@ xlo=7.2,xhi=7.7,ylo=0,yhi=30,xp=a,yp=x
+@ poimap=maxmin, poivar=x, poisgn=0
+@ rangeover=a,rangestep=30,rangelow=7.3,rangehigh=7.61
+@ lt=-6 #linetype
+done
