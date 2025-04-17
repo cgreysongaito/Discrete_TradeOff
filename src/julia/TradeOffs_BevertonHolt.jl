@@ -43,11 +43,14 @@ let
     datap040=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.4)) for τval in 0:1:6]
     datap050=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.5)) for τval in 0:1:6]
     datap055=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.55)) for τval in 0:1:6]
-    equifig = scatter(0:1:6,datap040, label="p=0.4")
-    scatter!(0:1:6,datap050, label="p=0.5")
-    scatter!(0:1:6,datap055, label="p=0.55")
+    using Random
+    equifig = scatter(collect(0:1:6) .+ randn(7) .*0.05, datap040, label="p=0.4",markersize=6)
+    scatter!(collect(0:1:6) .+ randn(7) .*0.05, datap050, label="p=0.5",markersize=6)
+    scatter!(collect(0:1:6) .+ randn(7) .*0.05, datap055, label="p=0.55",markersize=6)
     xlabel!("τ")
     ylabel!("N*(τ)")
+    plot!(grid=false)
+    savefig(joinpath(abpath(), "figs/BevHoltI_equi.png"))
 end
 
 
@@ -157,7 +160,7 @@ let
     xlabel!("τ")
     ylabel!("N")
     xlims!(0.0,15.0)
-    # savefig(joinpath(abpath(), "figs/tauorbitdiagram_RickerRicker.pdf"))
+    savefig(joinpath(abpath(), "figs/tauorbitdiagram_BHRicker.pdf"))
 end
 
 #Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)

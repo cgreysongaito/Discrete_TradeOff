@@ -584,10 +584,10 @@ end
 
 let 
     time = 5000
-    τval=1
-    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval, a=25.0,α=1.5,β=2.0,D=0.5,C=0.15), 0.1, LeslieMatrix)
-    plot(0:1:time,first_elements(timeseries))
-    # return first_elements(timeseries)[end-50:end]
+    τval=15
+    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval, a=100.0,α=1.5,β=0.1,D=0.9,C=0.15), 0.1, LeslieMatrix)
+    # plot(0:1:time,first_elements(timeseries))
+    return first_elements(timeseries)[1:1200]
 end
 
 
@@ -616,13 +616,15 @@ let
     # RIIorbitdata = model_τorbit(τrange, RickerBeverton_model, RickerPar(a=100,D=0.5,C=0.15), 50)
     par=RickerPar(τ=0, a=100.0,α=1.5,β=0.1,D=0.9,C=0.15)
     RLorbitdata = flattenorbitdata(LeslieMatrixOrbitDiagram(τrange, 50000, 100, par, 0.1, LeslieMatrix))
-    RLτ0data = model_recursion(0.1,5000,par, RickerLeslie_τ0_model)
-    RLτ0data_trans=RLτ0data[end-100:end]
-    p2=scatter(RLorbitdata[1], RLorbitdata[2],color=:black, label="")
-    scatter!(zeros(length(RLτ0data_trans)), RLτ0data_trans, color=:black, label="")
-    xlabel!("τ")
-    ylabel!("N")
-    xlims!(0.0,15.0)
+    
+    return RL
+    # RLτ0data = model_recursion(0.1,5000,par, RickerLeslie_τ0_model)
+    # RLτ0data_trans=RLτ0data[end-100:end]
+    # p2=scatter(RLorbitdata[1], RLorbitdata[2],color=:black, label="")
+    # scatter!(zeros(length(RLτ0data_trans)), RLτ0data_trans, color=:black, label="")
+    # xlabel!("τ")
+    # ylabel!("N")
+    # xlims!(0.0,15.0)
     # savefig(joinpath(abpath(), "figs/tauorbitdiagram_RickerRicker.pdf"))
 end
 

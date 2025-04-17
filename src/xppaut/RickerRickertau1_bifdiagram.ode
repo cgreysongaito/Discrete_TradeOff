@@ -1,34 +1,25 @@
 #RickerRicker Model
 #bifurcation diag 
-#tau = 4
-x(t+1)=(x * exp(-alpha-beta*x)) + exp(-D-C*u)*u
+#tau = 1
+x(t+1)=(x * exp(-alpha-beta*x)) + exp(-D-C*y)*y
 y(t+1)= (a-b*exp(-K*(tau+1))) * exp(-D-C*(a-b*exp(-K*(tau+1)))*x)*x
-z(t+1)= exp(-D-C*y)*y
-w(t+1)= exp(-D-C*z)*z
-u(t+1)= exp(-D-C*w)*w
 init x=10.0
 init y=10.0
-init z=10.0
-init w=10.0
-init u=10.0
 x(0)=10.0
 y(0)=10.0
-z(0)=10.0
-w(0)=10.0
-u(0)=10.0
 
-#a bifurction
-#par a=5.0, D=0.1, tau=4.0, alpha=0.1, beta=0.3, b=200, K=1.0, C=0.1
+#a bifurcation
+#par a=30.0, D=0.1, tau=1.0, alpha=0.1, beta=0.3, b=200, K=1.0, C=0.1
 #K bifurcation
-#par K=1.0, a=5.0, D=0.1, tau=4.0, alpha=0.1, beta=0.3, b=200, C=0.1
+#par K=1.0, a=30.0, D=0.1, tau=1.0, alpha=0.1, beta=0.3, b=200, C=0.1
 #b bifurcation - when a=5.0 b<273
-#par b=200, K=1.0, a=25.0, D=0.1, tau=4.0, alpha=0.1, beta=0.3, C=0.1
+#par b=200, K=1.0, a=30.0, D=0.1, tau=1.0, alpha=0.1, beta=0.3, C=0.1
 #C bifurcation 
-#par a=5.0, C=0.1, D=0.1, b=200, K=1.0, tau=4.0, alpha=0.1, beta=0.3
+#par a=30.0, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, alpha=0.1, beta=0.3
 #alpha bifurcation
-#par a=5.0, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=4.0, beta=0.3
+#par a=30.0, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, beta=0.3
 #beta bifurcation
-par a=5.0, beta=0.3, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=4.0, 
+par a=30.0, beta=0.3, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, 
 
 
 @ total=10000,method=discrete,nout=1
