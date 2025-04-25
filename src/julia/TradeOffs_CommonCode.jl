@@ -26,7 +26,7 @@ function RickerLeslie_τ0_model(Ndata, t, para)
     g=a-b*exp(-K*(τ+1))
         return (Ndata[t] * exp(-α-β*Ndata[t])) + g*exp(-α-β*g*Ndata[t])*Ndata[t]
 end
-
+#TODO switch out second alpha and beta for D and C
 #Parameters for the models
 @with_kw mutable struct BevHoltPar
     α::Float64 = 0.1 #death rate of mature? check!
