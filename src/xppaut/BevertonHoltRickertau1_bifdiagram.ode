@@ -15,13 +15,13 @@ y(0)=10.0
 #b bifurcation - when a=5.0 b<273
 #par b=200, K=1.0, a=25.0, D=0.1, tau=1.0, alpha=0.1, beta=0.3, C=0.1
 #C bifurcation 
-par a=30.0, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, alpha=0.1, beta=0.3
+#par a=30.0, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, alpha=0.1, beta=0.3
 #D bifurcation
 #par a=30.0,D=0.1, C=0.1, b=200, K=1.0, tau=1.0, alpha=0.1, beta=0.3
 #alpha bifurcation
 #par a=5.0, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, beta=0.3
 #beta bifurcation
-#par a=5.0, beta=0.3, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, 
+par a=30, beta=0.3, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, 
 
 #C, beta bifurcation
 #par beta=0.3,C=0.1, a=40.0, D=0.1, b=200, K=1.0, tau=1.0, alpha=0.1
