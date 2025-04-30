@@ -18,7 +18,7 @@ z(0)=0.5
 #b bifurcation - when a=5.0 b<273
 #par b=200, K=1.0, a=25.0, D=0.1, tau=2.0, alpha=0.1, beta=0.3, C=0.1
 #C bifurcation 
-par a=25.0, C=0.3, D=0.1, b=200, K=1.0, tau=2.0, alpha=0.1, beta=0.3
+par a=30.0, C=0.3, D=0.1, b=200, K=1.0, tau=2.0, alpha=1, beta=0.3
 #alpha bifurcation
 #par a=5.0, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=2.0, beta=0.3
 #beta bifurcation

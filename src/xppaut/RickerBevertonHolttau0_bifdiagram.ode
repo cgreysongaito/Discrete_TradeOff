@@ -12,7 +12,7 @@ x(0)=0.5
 #b bifurcation - when a=5.0 b<273
 #par b=200, K=1.0, a=25.0, D=0.1, tau=0.0, alpha=0.1, beta=0.3, C=0.1
 #C bifurcation 
-par a=10.0, C=0.3, D=0.1, b=200, K=1.0, tau=0.0, alpha=0.1, beta=0.3
+par a=74.0, C=0.3, D=0.1, b=200, K=1.0, tau=0.0, alpha=0.1, beta=0.3
 #alpha bifurcation
 #par a=5.0, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=0.0, beta=0.3
 #beta bifurcation
@@ -37,7 +37,7 @@ par a=10.0, C=0.3, D=0.1, b=200, K=1.0, tau=0.0, alpha=0.1, beta=0.3
 #@ autoxmin=0.0,autoxmax=273.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=273.0 
 
 #C bifurcation
-@ autoxmin=0.0,autoxmax=120.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=120.0 
+@ autoxmin=0.0,autoxmax=500.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=500.0 
 
 #beta C bifurcation
 #@ autoxmin=0.0,autoxmax=5.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=10.0 

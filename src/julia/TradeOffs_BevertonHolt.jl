@@ -55,6 +55,46 @@ end
 
 
 #Cohort dependent survival of immature individuals (immature individuals exposed to density effects within cohort - but not density effect with mature individuals)
+
+#root solve BevertonholtBevertonholt equality
+function Nequi_BHBH(N, para)
+    @unpack α,β,D,C,a,b,K,τ = para
+    g = calc_g(para)
+    #equilibrium point
+    return 1-(1/(1+α+β*N))-(D*g)/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*g*N) 
+end 
+
+function findequil_BHBH(para)
+    return find_zero(N -> Nequi_BHBH(N, para), 0.5)
+end
+
+findequil_BHBH(BevHoltPar(τ=2,α=0.1,β=0.3,D=0.1,C=0.8,a=30.0,b=200.0,K=1.0))
+
+function NdataBHBH(τrange,Cval, defaultpara)
+    data = zeros(length(τrange))
+    for i in eachindex(τrange)
+        local_par = deepcopy(defaultpara)
+        local_par.τ = τrange[i]
+        local_par.C = Cval
+        data[i] = findequil_BHBH(local_par)
+    end
+    return data
+end
+
+let 
+    τrange = 0:1:15
+    Cval01data=NdataBHBH(τrange, 0.1, BevHoltPar(α=0.1,β=0.3,D=0.1,a=90.0,b=200.0,K=1.0))
+    Cval05data=NdataBHBH(τrange, 0.5, BevHoltPar(α=0.1,β=0.3,D=0.1,a=90.0,b=200.0,K=1.0))
+    Cval10data=NdataBHBH(τrange, 1.0, BevHoltPar(α=0.1,β=0.3,D=0.1,a=90.0,b=200.0,K=1.0))
+    scatter(τrange,Cval01data, color=:blue, label="C=0.1")
+    scatter!(τrange,Cval05data, color=:red,label="C=0.5")
+    scatter!(τrange,Cval10data, color=:purple,label="C=1.0")
+    xlabel!("τ")
+    ylabel!("N*(τ)")
+    plot!(grid=false)
+    savefig(joinpath(abpath(), "figs/BevHoltBevHolt_tauequi.png"))
+end
+
 let 
     time = 500
     timeseries = model_recursion(0.1,time,BevHoltPar(τ=3,p=0.55), BevertonHolt_modelII)

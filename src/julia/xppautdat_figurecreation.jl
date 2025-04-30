@@ -471,3 +471,71 @@ let
     savefig(joinpath(abpath(), "figs/abetabifurcation_BevertonHoltRicker_weak.pdf"))
 end
 
+
+function cleanxppautdat_onepar(file_path)
+    datalm = readdlm(file_path)
+    data = DataFrame(datalm, [:a, :N1, :N2, :PointType1, :LineNum, :PointType2])
+    @select!(data, :a, :N1, :PointType1, :PointType2)
+    @transform!(data, :PointType1 = Int.(:PointType1), :PointType2 = Int.(:PointType2))
+    @transform!(data, :PointType = string.(:PointType1) .* string.(:PointType2))
+    @transform!(data, :PointTypeName = ifelse.(:PointType .== "10", "Stable", ifelse.(:PointType .== "20", "Unstable", "Other")))
+    @select!(data, :a, :N1, :PointTypeName)
+    data = sort(data, :N1)
+    return data
+end
+
+#BevertonHoltBevertonHolt model
+let 
+    datatau0= cleanxppautdat_onepar("src/xppaut/BevertonHoltBevertonHolttau0_a.dat")
+    sta_data0=@subset(datatau0, :PointTypeName .== "Stable")
+    datatau1= cleanxppautdat_onepar("src/xppaut/BevertonHoltBevertonHolttau1_a.dat")
+    sta_data1=@subset(datatau1, :PointTypeName .== "Stable")
+    datatau2= cleanxppautdat_onepar("src/xppaut/BevertonHoltBevertonHolttau2_a.dat")
+    sta_data2=@subset(datatau2, :PointTypeName .== "Stable")
+    datatau3= cleanxppautdat_onepar("src/xppaut/BevertonHoltBevertonHolttau3_a.dat")
+    sta_data3=@subset(datatau3, :PointTypeName .== "Stable")
+    datatau4= cleanxppautdat_onepar("src/xppaut/BevertonHoltBevertonHolttau4_a.dat")
+    sta_data4=@subset(datatau4, :PointTypeName .== "Stable")
+    datatau5= cleanxppautdat_onepar("src/xppaut/BevertonHoltBevertonHolttau5_a.dat")
+    sta_data5=@subset(datatau5, :PointTypeName .== "Stable")
+    plot(sta_data0.a, sta_data0.N1, lw=2, linestyle=:solid, color=:blue,label="τ=0")
+    plot!(sta_data1.a, sta_data1.N1, lw=2, linestyle=:solid, color=:brown,label="τ=1")
+    plot!(sta_data2.a, sta_data2.N1, lw=2, linestyle=:solid, color=:orange,label="τ=2")
+    plot!(sta_data3.a, sta_data3.N1, lw=2, linestyle=:solid, color=:purple,label="τ=3")
+    plot!(sta_data4.a, sta_data4.N1, lw=2, linestyle=:solid, color=:red,label="τ=4")
+    plot!(sta_data5.a, sta_data5.N1, lw=2, linestyle=:solid,color=:green,label="τ=5")
+    xlims!(0.0,500.0)
+    ylims!(0.0, 10.0)
+    xlabel!("a")
+    ylabel!("N")
+    title!("BevertonHolt Beverton Holt model")
+    savefig(joinpath(abpath(), "figs/BevertonHoltBevertonHolt_a.pdf"))
+end
+
+#RickerBevertonHolt model
+let 
+    datatau0= cleanxppautdat_onepar("src/xppaut/RickerBevertonHolttau0_a.dat")
+    sta_data0=@subset(datatau0, :PointTypeName .== "Stable")
+    datatau1= cleanxppautdat_onepar("src/xppaut/RickerBevertonHolttau1_a.dat")
+    sta_data1=@subset(datatau1, :PointTypeName .== "Stable")
+    datatau2= cleanxppautdat_onepar("src/xppaut/RickerBevertonHolttau2_a.dat")
+    sta_data2=@subset(datatau2, :PointTypeName .== "Stable")
+    datatau3= cleanxppautdat_onepar("src/xppaut/RickerBevertonHolttau3_a.dat")
+    sta_data3=@subset(datatau3, :PointTypeName .== "Stable")
+    datatau4= cleanxppautdat_onepar("src/xppaut/RickerBevertonHolttau4_a.dat")
+    sta_data4=@subset(datatau4, :PointTypeName .== "Stable")
+    datatau5= cleanxppautdat_onepar("src/xppaut/RickerBevertonHolttau5_a.dat")
+    sta_data5=@subset(datatau5, :PointTypeName .== "Stable")
+    plot(sta_data0.a, sta_data0.N1, lw=2, linestyle=:solid, color=:blue,label="τ=0")
+    plot!(sta_data1.a, sta_data1.N1, lw=2, linestyle=:solid, color=:brown,label="τ=1")
+    plot!(sta_data2.a, sta_data2.N1, lw=2, linestyle=:solid, color=:orange,label="τ=2")
+    plot!(sta_data3.a, sta_data3.N1, lw=2, linestyle=:solid, color=:purple,label="τ=3")
+    plot!(sta_data4.a, sta_data4.N1, lw=2, linestyle=:solid, color=:red,label="τ=4")
+    plot!(sta_data5.a, sta_data5.N1, lw=2, linestyle=:solid,color=:green,label="τ=5")
+    xlims!(0.0,500.0)
+    ylims!(0.0, 10.0)
+    xlabel!("a")
+    ylabel!("N")
+    title!("Ricker Beverton Holt model")
+    savefig(joinpath(abpath(), "figs/RickerBevertonHolt_a.pdf"))
+end
