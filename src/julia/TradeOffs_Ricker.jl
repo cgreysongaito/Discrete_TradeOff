@@ -60,17 +60,18 @@ let
 end
 
 let 
-    time = 5000
-    finalts=4950
-    timeseries = model_recursion(0.1,time,RickerPar(τ=3,p=0.6, a=10.8), RickerConstant_model)
-    p1=scatter(timeseries[finalts-3:end-3], timeseries[finalts:end])
+    time = 10000
+    finalts=9900
+    timeseries = model_recursion(0.1,time,RickerPar(τ=1,p=0.6, a=29.839,α=0.1,β=0.3,K=1.0,b=200), RickerConstant_model)
+    # return timeseries[finalts:end]
+    p1=scatter(timeseries[finalts-1:end-1], timeseries[finalts:end])
     xlabel!("N(t-3)")
     ylabel!("N(t)")
-    p2=scatter(0.0:1.0:51, timeseries[finalts:end])
+    p2=scatter(0.0:1.0:101, timeseries[finalts:end])
     xlabel!("t")
     ylabel!("N(t)")
     plot(p1,p2, layout=(2,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
-    savefig(joinpath(abpath(), "figs/timeemedding_a108_Rickerconstant.pdf"))
+    # savefig(joinpath(abpath(), "figs/timeemedding_a108_Rickerconstant.pdf"))
 end
 
 let 

@@ -1,0 +1,25 @@
+#RickerConstant Model
+#bifurcation diag of the discrete map f(x)=(x * exp(-α-β*x)) + a-b*exp(-K*(tau+1))*(p^(tau+1))*delay(x,tau)
+#tau = 1
+x(t+1)=(x * exp(-alpha-beta*x)) + (a-b*exp(-K*(tau+1)))*(p^(tau+1))*y
+y(t+1)= x
+init x=0.5
+init y=0.5
+x(0)=0.5
+y(0)=0.5
+
+
+#Can't do tau bifurcation so do a and p bifurcations
+#a bifurction
+par a=29.6, p=0.6, tau=1.0, alpha=0.1, beta=0.3, b=200, K=1.0
+
+
+
+@ total=5000,method=discrete,nout=8
+@ autoxmin=0.0,autoxmax=40.0,autoymin=-0.5,autoymax=60.0
+#a bifurcation
+@ dsmax=0.05,dsmin=.00001,parmin=0.0,parmax=40.0, ds=0.02, nmax=500, npr=500
+
+@ maxstor 10000000 
+@ xlo=0,xhi=5000,ylo=0,yhi=60,xp=t,yp=x
+done
