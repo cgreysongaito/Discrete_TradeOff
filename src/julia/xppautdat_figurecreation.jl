@@ -12,7 +12,19 @@ Reads and processes data from a file, returning a cleaned DataFrame.
 # Returns
 - `DataFrame`: Cleaned DataFrame with columns `:a`, `:Lowp`, and `:PointTypeName`.
 """
-function cleanxppautdat(file_path)
+function cleanxppautdat_onepar(file_path)
+    datalm = readdlm(file_path)
+    data = DataFrame(datalm, [:a, :N1, :N2, :PointType1, :LineNum, :PointType2])
+    @select!(data, :a, :N1, :PointType1, :PointType2)
+    @transform!(data, :PointType1 = Int.(:PointType1), :PointType2 = Int.(:PointType2))
+    @transform!(data, :PointType = string.(:PointType1) .* string.(:PointType2))
+    @transform!(data, :PointTypeName = ifelse.(:PointType .== "10", "Stable", ifelse.(:PointType .== "20", "Unstable", "Other")))
+    @select!(data, :a, :N1, :PointTypeName)
+    data = sort(data, :a)
+    return data
+end
+
+function cleanxppautdat_twopar(file_path)
     datalm = readdlm(file_path)
     data = DataFrame(datalm, [:a, :Low2ndpar, :High2ndpar, :PointType1, :LineNum, :PointType2])
     @select!(data, :a, :Low2ndpar, :PointType1, :PointType2)
@@ -23,6 +35,43 @@ function cleanxppautdat(file_path)
     data = sort(data, :Low2ndpar)
     return data
 end
+
+#RickerConstant
+default(grid=false, linewidth=3, tickfontsize=12, legendfontsize=10, guidefontsize=15)
+let #Even tau
+    datatau2= cleanxppautdat_onepar("src/xppaut/RickerConstanttau2_a.dat")
+    tau2lowerbound=alowerconstraint(RickerPar(p=0.6,τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
+    datatau2_filtered = @subset(datatau2, :a .> tau2lowerbound ) #.|| :N1 .>= 0
+    datatau2s = @subset(datatau2_filtered, :PointTypeName .== "Stable" .&& :N1 .>0.00)
+    datatau2ua = @subset(datatau2_filtered, :PointTypeName .== "Unstable" .&& :N1 .>6.00)
+    datatau2ub = @subset(datatau2_filtered, :PointTypeName .== "Unstable" .&& :N1 .<1.00)
+    datatau4= cleanxppautdat_onepar("src/xppaut/RickerConstanttau4_a.dat")
+    tau4lowerbound=alowerconstraint(RickerPar(p=0.6,τ=4.0, α=0.1, β=0.3, b=200, K=1.0))
+    datatau4_filtered = @subset(datatau4, :a .> tau4lowerbound ) #.|| :N1 .>= 0
+    datatau4s = @subset(datatau4_filtered, :PointTypeName .== "Stable" .&& :N1 .>0.00)
+    datatau4ua = @subset(datatau4_filtered, :PointTypeName .== "Unstable".&& :N1 .>6.00)
+    datatau4ub = @subset(datatau4_filtered, :PointTypeName .== "Unstable" .&& :N1 .<1.00)
+    datatau6= cleanxppautdat_onepar("src/xppaut/RickerConstanttau6_a.dat")
+    tau6lowerbound=alowerconstraint(RickerPar(p=0.6,τ=6.0, α=0.1, β=0.3, b=200, K=1.0))
+    datatau6_filtered = @subset(datatau6, :a .> tau4lowerbound ) #.|| :N1 .>= 0
+    datatau6s = @subset(datatau6_filtered, :PointTypeName .== "Stable" .&& :N1 .>0.00)
+    datatau6ua = @subset(datatau6_filtered, :PointTypeName .== "Unstable".&& :N1 .>6.00)
+    datatau6ub = @subset(datatau6_filtered, :PointTypeName .== "Unstable" .&& :N1 .<1.00)
+    plot(datatau2s.a, datatau2s.N1, color=:black, label="τ=2.0")
+    plot!(datatau2ua.a, datatau2ua.N1, color=:black, linestyle=:dash, label="")
+    # plot!(datatau2ub.a, datatau2ub.N1, color=:black, linestyle=:dash,label="")
+    plot!(datatau4s.a, datatau4s.N1, color=:blue, label="τ=4.0")
+    plot!(datatau4ua.a, datatau4ua.N1, color=:blue, linestyle=:dash, label="")
+    plot!(datatau6s.a, datatau6s.N1, color=:red, label="τ=6.0")
+    plot!(datatau6ua.a, datatau6ua.N1, color=:red, linestyle=:dash, label="")
+    plot!([-1],[0],linestyle=:solid, color=:black,label="Stable")
+    plot!([-1],[0],linestyle=:dash, color=:black,label="Unstable")
+    xlabel!("a")
+    ylabel!("N*")
+    ylims!(-0.5, 15.0)
+    xlims!(0.0, 38.0)
+end
+
 
 let 
     alow=alowerconstraint(RickerPar(p=0.3,τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
@@ -472,17 +521,7 @@ let
 end
 
 
-function cleanxppautdat_onepar(file_path)
-    datalm = readdlm(file_path)
-    data = DataFrame(datalm, [:a, :N1, :N2, :PointType1, :LineNum, :PointType2])
-    @select!(data, :a, :N1, :PointType1, :PointType2)
-    @transform!(data, :PointType1 = Int.(:PointType1), :PointType2 = Int.(:PointType2))
-    @transform!(data, :PointType = string.(:PointType1) .* string.(:PointType2))
-    @transform!(data, :PointTypeName = ifelse.(:PointType .== "10", "Stable", ifelse.(:PointType .== "20", "Unstable", "Other")))
-    @select!(data, :a, :N1, :PointTypeName)
-    data = sort(data, :N1)
-    return data
-end
+
 
 #BevertonHoltBevertonHolt model
 let 
