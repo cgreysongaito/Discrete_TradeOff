@@ -1,4 +1,5 @@
 include("packages.jl")
+default(grid=false, linewidth=3, tickfontsize=12, legendfontsize=10, guidefontsize=15)
 include("TradeOffs_CommonCode.jl")
 
 """
@@ -15,29 +16,28 @@ Reads and processes data from a file, returning a cleaned DataFrame.
 function cleanxppautdat_onepar(file_path)
     datalm = readdlm(file_path)
     data = DataFrame(datalm, [:a, :N1, :N2, :PointType1, :LineNum, :PointType2])
-    @select!(data, :a, :N1, :PointType1, :PointType2)
+    @select!(data, :a, :N1, :PointType1, :PointType2, :LineNum)
     @transform!(data, :PointType1 = Int.(:PointType1), :PointType2 = Int.(:PointType2))
     @transform!(data, :PointType = string.(:PointType1) .* string.(:PointType2))
     @transform!(data, :PointTypeName = ifelse.(:PointType .== "10", "Stable", ifelse.(:PointType .== "20", "Unstable", "Other")))
-    @select!(data, :a, :N1, :PointTypeName)
-    data = sort(data, :a)
+    @select!(data, :a, :N1, :PointTypeName, :LineNum)
+    # data = sort(data, :N1)
     return data
 end
 
 function cleanxppautdat_twopar(file_path)
     datalm = readdlm(file_path)
     data = DataFrame(datalm, [:a, :Low2ndpar, :High2ndpar, :PointType1, :LineNum, :PointType2])
-    @select!(data, :a, :Low2ndpar, :PointType1, :PointType2)
+    @select!(data, :a, :Low2ndpar, :PointType1, :PointType2, :LineNum)
     @transform!(data, :PointType1 = Int.(:PointType1), :PointType2 = Int.(:PointType2))
     @transform!(data, :PointType = string.(:PointType1) .* string.(:PointType2))
     @transform!(data, :PointTypeName = ifelse.(:PointType .== "25", "BP", ifelse.(:PointType .== "23", "HP", "Other")))
-    @select!(data, :a, :Low2ndpar, :PointTypeName)
+    @select!(data, :a, :Low2ndpar, :PointTypeName, :LineNum)
     data = sort(data, :Low2ndpar)
     return data
 end
 
 #RickerConstant
-default(grid=false, linewidth=3, tickfontsize=12, legendfontsize=10, guidefontsize=15)
 let #Even tau
     datatau2= cleanxppautdat_onepar("src/xppaut/RickerConstanttau2_a.dat")
     tau2lowerbound=alowerconstraint(RickerPar(p=0.6,τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
@@ -70,8 +70,91 @@ let #Even tau
     ylabel!("N*")
     ylims!(-0.5, 15.0)
     xlims!(0.0, 38.0)
+    savefig(joinpath(abpath(), "figs/RickerConstanttaueven_a.pdf"))
 end
 
+function branchsplitter(subsetteddata)
+    Nvalp2=maximum(subsetteddata.N1)
+    upperbranchp2 = @subset(subsetteddata, :N1 .> Nvalp2 .&& :LineNum .== 2.0)
+    lowerbranchp2 = @subset(subsetteddata, :N1 .< Nvalp2 .&& :LineNum .== 2.0)
+    Nvalp4a=maximum(upperbranchp2.N1)
+    Nvalp4b=minimum(lowerbranchp2.N1)
+    upperbranchp4a = @subset(subsetteddata, :N1 .> Nvalp4a .&& :LineNum .== 3.0)
+    lowerbranch
+    return [upperbranchp2, lowerbranchp2]
+end
+
+function branchsplitter2(subsetteddata)
+    series = []
+    current_series = DataFrame()
+    n = nrow(subsetteddata)
+    i = 1
+    while i <= n
+        push!(current_series, subsetteddata[i, :])
+        if i < n && abs(subsetteddata.N1[i+1] - subsetteddata.N1[i]) > 0.5
+            push!(series, current_series)
+            current_series = DataFrame()
+        end
+        i += 1
+    end
+    if nrow(current_series) > 0
+        push!(series, current_series)
+    end
+    return series
+end
+
+let #tau=3 (odd)
+    datatau3= cleanxppautdat_onepar("src/xppaut/RickerConstanttau3_a.dat")
+    tau3lowerbound=alowerconstraint(RickerPar(p=0.6,τ=3.0, α=0.1, β=0.3, b=200, K=1.0))
+    tau3upperbound=ahigherconstraint(RickerPar(p=0.6,τ=3.0, α=0.1, β=0.3, b=200, K=1.0))
+    datatau3_filtered = @subset(datatau3, :a .> tau3lowerbound )
+    datatau3s1 = @subset(datatau3_filtered, :PointTypeName .== "Stable" .&& :LineNum .==1.0)  
+    datatau3s2p2upper = unique(@subset(datatau3_filtered, :PointTypeName .== "Stable" .&& :LineNum .==2.0 .&& :N1 .> maximum(datatau3s1.N1)), :a)
+    datatau3s2p2lower = unique(@subset(datatau3_filtered, :PointTypeName .== "Stable" .&& :LineNum .==2.0 .&& :N1 .< maximum(datatau3s1.N1) .&& :N1 .>0.1), :a)
+    datatau3s2_0 = @subset(datatau3_filtered, :PointTypeName .== "Stable" .&& :LineNum .==2.0 .&& :N1 .< 1.00)  
+    datatau3s3p4upperupper = @subset(datatau3_filtered, :PointTypeName .== "Stable" .&& :LineNum .==3.0 .&& :N1 .> maximum(datatau3s2p2upper.N1))  
+    datatau3s3p4upperlower = @subset(datatau3_filtered, :PointTypeName .== "Stable" .&& :LineNum .==3.0 .&& :N1 .< maximum(datatau3s2p2upper.N1) .&& :N1 .>0.1)  
+    datatau3s3p4lowerupper = unique(@subset(datatau3_filtered, :PointTypeName .== "Stable" .&& :LineNum .==4.0 .&& :N1 .< maximum(datatau3s2p2lower.N1)), :a)  
+    datatau3s3p4lowerlower = @subset(datatau3_filtered, :PointTypeName .== "Stable" .&& :LineNum .==4.0 .&& :N1 .< maximum(datatau3s2p2lower.N1) .&& :N1 .>0.1)  
+
+    datatau3u1 = unique(@subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :a .>7 .&& :LineNum .==1.0 .&& :N1 .> 0.00), :a)
+    datatau3u2upper = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :LineNum .==2.0 .&& :N1 .> maximum(datatau3s1.N1) .&& :a .> maximum(datatau3s1.a)+0.1)
+    datatau3u2lower = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :LineNum .==2.0 .&& :N1 .< maximum(datatau3s1.N1) .&& :N1 .>0 .&& :a .> maximum(datatau3s1.a)+0.1)
+    datatau3u3 = unique(@subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :a .>7.00 .&& :LineNum .==3.0 .&& :N1 .> 0.00), :a)
+    datatau3u4upper = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :a .>7.00 .&& :LineNum .==4.0 .&& :N1 .> maximum(datatau3s3p4lowerlower.N1))
+    datatau3u4lower = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :a .>7.00 .&& :LineNum .==4.0 .&& :N1 .< maximum(datatau3s3p4lowerlower.N1) .&& :N1 .>0.001)
+    datatau3u0 = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :LineNum .==2.0 .&& :N1 .< 0.001)
+    datatau3ul0 = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :LineNum .==1.0 .&& :N1 .< 0.001)
+
+    plot(datatau3s1.a, datatau3s1.N1, color=:black, label="Stable")
+    plot!(datatau3s2p2upper.a, datatau3s2p2upper.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau3s2p2lower.a, datatau3s2p2lower.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau3s2_0.a, datatau3s2_0.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau3s3p4upperupper.a, datatau3s3p4upperupper.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau3s3p4upperlower.a, datatau3s3p4upperlower.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau3s3p4lowerlower.a, datatau3s3p4lowerlower.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau3s3p4lowerupper.a, datatau3s3p4lowerupper.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau3u1.a, datatau3u1.N1, color=:black, linestyle=:dash, lw=1.5, label="Unstable")
+    plot!(datatau3u2upper.a, datatau3u2upper.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    plot!(datatau3u2lower.a, datatau3u2lower.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    plot!(datatau3u3.a, datatau3u3.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    plot!(datatau3u4upper.a, datatau3u4upper.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    plot!(datatau3u4lower.a, datatau3u4lower.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    plot!(datatau3u0.a, datatau3u0.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    plot!(datatau3ul0.a, datatau3ul0.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    ylabel!("N*")
+    xlabel!("a")
+    xlims!(0.0, tau3upperbound+0.1)
+    ylims!(-0.5, 30.0)
+end
+
+let #Time embedding for tau=3 when period 4
+    
+end
+
+let #Time embedding for tau=3 when N-S?
+    
+end
 
 let 
     alow=alowerconstraint(RickerPar(p=0.3,τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
