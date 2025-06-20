@@ -27,9 +27,9 @@ h(0)=0.5
 par a=6.0, p=0.6, tau=5.0, alpha=0.1, beta=0.3, b=200, K=1.0
 
 @ total=5000,method=discrete,nout=8
-@ autoxmin=0.5,autoxmax=22.0,autoymin=-0.5,autoymax=15.0
+@ autoxmin=0.5,autoxmax=22.0,autoymin=-0.5,autoymax=30.0
 #a bifurcation
-@ dsmax=0.02,dsmin=.000000000001,parmin=0.5,parmax=22.0, ds=0.02, npr=40, nmax=1500
+@ dsmax=0.02,dsmin=.000000000001,parmin=0.5,parmax=22.0, ds=0.02, npr=1000, nmax=1500
 
 @ maxstor 10000000 
 @ xlo=0,xhi=5000,ylo=0,yhi=50,xp=t,yp=x

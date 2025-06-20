@@ -1,6 +1,7 @@
 include("packages.jl")
 include("TradeOffs_CommonCode.jl")
-
+using LaTeXStrings
+default(titlefont = (20, "times"), legendfontsize = 15, guidefont = 18, tickfont = 12, framestyle = :zerolines, grid=false)
 #TODO LIST
 #make function that calculates lower and upperbounds of a for all tau
 #make function that calculates lower and upper bounds of p for all tau
@@ -40,17 +41,19 @@ function BevHoltI_equi(para)
 end
 
 let 
-    datap040=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.4)) for τval in 0:1:6]
-    datap050=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.5)) for τval in 0:1:6]
-    datap055=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.55)) for τval in 0:1:6]
+    datap040=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.4)) for τval in 0:1:7]
+    datap050=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.5)) for τval in 0:1:7]
+    datap055=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.55)) for τval in 0:1:7]
     using Random
-    equifig = scatter(collect(0:1:6) .+ randn(7) .*0.05, datap040, label="p=0.4",markersize=6)
-    scatter!(collect(0:1:6) .+ randn(7) .*0.05, datap050, label="p=0.5",markersize=6)
-    scatter!(collect(0:1:6) .+ randn(7) .*0.05, datap055, label="p=0.55",markersize=6)
+    equifig = scatter(collect(0:1:7) .+ randn(8) .*0.05, datap040, label="\${\\tilde{p}}=0.4\$",markersize=6, color="#440154FF")
+    plot!(collect(0:1:7), datap040, label="",linestyle=:dash, color="#440154FF")
+    scatter!(collect(0:1:7) .+ randn(8) .*0.05, datap050, label="\${\\tilde{p}}=0.5\$",markersize=6, color="#238A8DFF")
+    plot!(collect(0:1:7), datap050, label="",linestyle=:dash, color="#238A8DFF")
+    scatter!(collect(0:1:7) .+ randn(8) .*0.05, datap055, label="\${\\tilde{p}}=0.55\$",markersize=6, color="#FDE725FF")
+    plot!(collect(0:1:7), datap055, label="",linestyle=:dash, color="#FDE725FF")
     xlabel!("τ")
     ylabel!("N*(τ)")
-    plot!(grid=false)
-    savefig(joinpath(abpath(), "figs/BevHoltI_equi.png"))
+    savefig(joinpath(abpath(), "figs/BevHoltI_equi.pdf"))
 end
 
 

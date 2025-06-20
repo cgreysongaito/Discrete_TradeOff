@@ -1,5 +1,5 @@
 include("packages.jl")
-default(grid=false, linewidth=3, tickfontsize=12, legendfontsize=10, guidefontsize=15)
+# default(grid=false, linewidth=3, tickfontsize=12, legendfontsize=10, guidefontsize=15)
 include("TradeOffs_CommonCode.jl")
 
 """
@@ -57,39 +57,67 @@ let #Even tau
     datatau6s = unique(@subset(datatau6_filtered, :PointTypeName .== "Stable" .&& :N1 .> 0.00), :a)
     datatau6ua = @subset(datatau6_filtered, :PointTypeName .== "Unstable" .&& :N1 .> 6.00)
     datatau6ub = @subset(datatau6_filtered, :PointTypeName .== "Unstable" .&& :N1 .< 1.00)
-    plot(datatau2s.a, datatau2s.N1, color=:black, label="τ=2.0")
-    plot!(datatau2ua.a, datatau2ua.N1, color=:black, linestyle=:dash, label="")
-    plot!(datatau4s.a, datatau4s.N1, color=:blue, label="τ=4.0")
-    plot!(datatau4ua.a, datatau4ua.N1, color=:blue, linestyle=:dash, label="")
-    plot!(datatau6s.a, datatau6s.N1, color=:red, label="τ=6.0")
-    plot!(datatau6ua.a, datatau6ua.N1, color=:red, linestyle=:dash, label="")
+    plot(datatau2s.a, datatau2s.N1, color="#73D055FF", label="τ=2.0")
+    plot!(datatau2ua.a, datatau2ua.N1, color="#73D055FF", linestyle=:dash, label="")
+    plot!(datatau4s.a, datatau4s.N1, color="#1F968BFF", label="τ=4.0")
+    plot!(datatau4ua.a, datatau4ua.N1, color="#1F968BFF", linestyle=:dash, label="")
+    plot!(datatau6s.a, datatau6s.N1, color="#404788FF", label="τ=6.0")
+    plot!(datatau6ua.a, datatau6ua.N1, color="#404788FF", linestyle=:dash, label="")
     plot!([-1], [0], linestyle=:solid, color=:black, label="Stable")
     plot!([-1], [0], linestyle=:dash, color=:black, label="Unstable")
     xlabel!("a")
     ylabel!("N*")
     ylims!(-0.5, 15.0)
     xlims!(0.0, 38.0)
-    savefig(joinpath(abpath(), "figs/RickerConstanttaueven_a.pdf"))
+    # println(maximum(datatau4s.a))
+    # savefig(joinpath(abpath(), "figs/RickerConstanttaueven_a.pdf"))
 end
 
-function branchsplitter2(subsetteddata)
-    series = []
-    current_series = DataFrame()
-    n = nrow(subsetteddata)
-    i = 1
-    while i <= n
-        push!(current_series, subsetteddata[i, :])
-        if i < n && abs(subsetteddata.N1[i+1] - subsetteddata.N1[i]) > 0.5
-            push!(series, current_series)
-            current_series = DataFrame()
-        end
-        i += 1
-    end
-    if nrow(current_series) > 0
-        push!(series, current_series)
-    end
-    return series
+let #Time embedding for tau=6
+    endtime = 1000000
+    finalts = 999000
+    timeseries = model_recursion(0.1, endtime, RickerPar(τ=6, p=0.6, a=33, α=0.1, β=0.3, K=1.0, b=200), RickerConstant_model)
+    df = DataFrame(time = 0:endtime, N = timeseries)
+    dfxaxis = @subset(df, :time .>= finalts-6 .&& :time .<= endtime-6)
+    dfyaxis = @subset(df, :time .>= finalts)
+    dfxaxis.row = 1:nrow(dfxaxis)
+    dfyaxis.row = 1:nrow(dfyaxis)
+    merged_df = leftjoin(dfxaxis, dfyaxis, on=:row, makeunique=true)
+    select!(merged_df, Not([:time, :time_1, :row]))
+    timeseriess = model_recursion(0.1, endtime, RickerPar(τ=6, p=0.6, a=32, α=0.1, β=0.3, K=1.0, b=200), RickerConstant_model)
+    dfs = DataFrame(time = 0:endtime, N = timeseriess)
+    dfxaxiss = @subset(dfs, :time .>= finalts-6 .&& :time .<= endtime-6)
+    dfyaxiss = @subset(dfs, :time .>= finalts)
+    dfxaxiss.row = 1:nrow(dfxaxiss)
+    dfyaxiss.row = 1:nrow(dfyaxiss)
+    merged_dfs = leftjoin(dfxaxiss, dfyaxiss, on=:row, makeunique=true)
+    select!(merged_dfs, Not([:time, :time_1, :row]))
+
+    scatter(merged_df.N, merged_df.N_1, color=:black, label="a=33", ms=3)
+    scatter!(merged_dfs.N, merged_dfs.N_1, color=:black, label="a=32", ms=8, marker=:star5)
+    xlabel!("N(t-6)")
+    ylabel!("N(t)")
+
 end
+
+# function branchsplitter2(subsetteddata)
+#     series = []
+#     current_series = DataFrame()
+#     n = nrow(subsetteddata)
+#     i = 1
+#     while i <= n
+#         push!(current_series, subsetteddata[i, :])
+#         if i < n && abs(subsetteddata.N1[i+1] - subsetteddata.N1[i]) > 0.5
+#             push!(series, current_series)
+#             current_series = DataFrame()
+#         end
+#         i += 1
+#     end
+#     if nrow(current_series) > 0
+#         push!(series, current_series)
+#     end
+#     return series
+# end
 
 let #tau=3 (odd)
     datatau3 = cleanxppautdat_onepar("src/xppaut/RickerConstanttau3_a.dat")
@@ -134,29 +162,156 @@ let #tau=3 (odd)
     xlabel!("a")
     xlims!(0.0, tau3upperbound + 0.1)
     ylims!(-0.5, 30.0)
-    println(maximum(datatau3s3p4lowerupper.a))
+    # println(maximum(datatau3s3p4lowerupper.a))
 end
 
-let #Time embedding for tau=3 when period 4
-    time = 1000000
+let #Time embedding for tau=3
+    endtime = 1000000
     finalts = 999000
-    timeseries = model_recursion(0.1, time, RickerPar(τ=3, p=0.6, a=10.99, α=0.1, β=0.3, K=1.0, b=200), RickerConstant_model)
-    df = DataFrame(time = 0:time, N = timeseries)
+    timeseriesp4 = model_recursion(0.1, endtime, RickerPar(τ=3, p=0.6, a=10.96, α=0.1, β=0.3, K=1.0, b=200), RickerConstant_model)
+    dfp4 = DataFrame(time = 0:endtime, N = timeseriesp4)
+    dfp4.periodpoint = mod.(dfp4.time, 4) .+ 1
+    dfp4.periodpoint = map(x -> x == 1 ? 3 : x == 2 ? 4 : x == 3 ? 1 : x == 4 ? 2 : x, dfp4.periodpoint)
+    dfxaxisp4 = @subset(dfp4, :time .>= finalts-3 .&& :time .<= endtime-3)
+    select!(dfxaxisp4, Not(:periodpoint))
+    dfyaxisp4 = @subset(dfp4, :time .>= finalts)
+    dfxaxisp4.row = 1:nrow(dfxaxisp4)
+    dfyaxisp4.row = 1:nrow(dfyaxisp4)
+    merged_dfp4 = leftjoin(dfxaxisp4, dfyaxisp4, on=:row, makeunique=true)
+    select!(merged_dfp4, Not([:time, :time_1, :row]))
+    df1p4 = @subset(merged_dfp4, :periodpoint .== 1)
+    df2p4 = @subset(merged_dfp4, :periodpoint .== 2)
+    df3p4 = @subset(merged_dfp4, :periodpoint .== 3)
+    df4p4 = @subset(merged_dfp4, :periodpoint .== 4)
+    timeseries = model_recursion(0.1, endtime, RickerPar(τ=3, p=0.6, a=10.99, α=0.1, β=0.3, K=1.0, b=200), RickerConstant_model)
+    df = DataFrame(time = 0:endtime, N = timeseries)
     df.periodpoint = mod.(df.time, 4) .+ 1
-    # timeseries1 = @subset(df, :periodpoint .== 1)
-    # timeseries2 = @subset(df, :periodpoint .== 2)
-    # timeseries3 = @subset(df, :periodpoint .== 3)
-    # timeseries4 = @subset(df, :periodpoint .== 4)
-    dfxaxis = @subset(df, :time .>= finalts-3)
+    dfxaxis = @subset(df, :time .>= finalts-3 .&& :time .<= endtime-3)
+    select!(dfxaxis, Not(:periodpoint))
     dfyaxis = @subset(df, :time .>= finalts)
-    return
-    scatter(dfxaxis.Nlt s-1:end-1], dfwotrans, color=dfwotrans.periodpoint)
+    dfxaxis.row = 1:nrow(dfxaxis)
+    dfyaxis.row = 1:nrow(dfyaxis)
+    merged_df = leftjoin(dfxaxis, dfyaxis, on=:row, makeunique=true)
+    select!(merged_df, Not([:time, :time_1, :row]))
+    df1 = @subset(merged_df, :periodpoint .== 1)
+    df2 = @subset(merged_df, :periodpoint .== 2)
+    df3 = @subset(merged_df, :periodpoint .== 3)
+    df4 = @subset(merged_df, :periodpoint .== 4)
+    scatter(df1.N, df1.N_1, color="#FDE725FF", label="1", ms=3)
+    scatter!(df2.N, df2.N_1, color="#73D055FF", label="2", ms=3)
+    scatter!(df3.N, df3.N_1, color="#238A8DFF", label="3", ms=3)
+    scatter!(df4.N, df4.N_1, color="#440154FF", label="4", ms=3)
+
+    scatter!(df1p4.N, df1p4.N_1, color="#FDE725FF", label="", ms=8, marker=:star5)
+    scatter!(df2p4.N, df2p4.N_1, color="#73D055FF", label="", ms=8, marker=:star5)
+    scatter!(df3p4.N, df3p4.N_1, color="#238A8DFF", label="", ms=8, marker=:star5)
+    scatter!(df4p4.N, df4p4.N_1, color="#440154FF", label="", ms=8, marker=:star5)
+    scatter!([NaN], [NaN], colour=:black,marker=:star5, label="Period Four")
+    scatter!([NaN], [NaN], colour=:black, marker=:circle, label="N-S")
+    
     xlabel!("N(t-3)")
     ylabel!("N(t)")
-    # savefig(joinpath(abpath(), "figs/timeemedding_a108_Rickerconstant.pdf"))
+
 end
 
-let #Time embedding for tau=3 when N-S?
+# let #Time embedding for tau=3 when period N-S
+#     endtime = 1000000
+#     finalts = 999000
+#     timeseries = model_recursion(0.1, endtime, RickerPar(τ=3, p=0.6, a=10.99, α=0.1, β=0.3, K=1.0, b=200), RickerConstant_model)
+#     df = DataFrame(time = 0:endtime, N = timeseries)
+#     df.periodpoint = mod.(df.time, 4) .+ 1
+#     dfxaxis = @subset(df, :time .>= finalts-3 .&& :time .<= endtime-3)
+#     select!(dfxaxis, Not(:periodpoint))
+#     dfyaxis = @subset(df, :time .>= finalts)
+#     dfxaxis.row = 1:nrow(dfxaxis)
+#     dfyaxis.row = 1:nrow(dfyaxis)
+#     merged_df = leftjoin(dfxaxis, dfyaxis, on=:row, makeunique=true)
+#     select!(merged_df, Not([:time, :time_1, :row]))
+#     df1 = @subset(merged_df, :periodpoint .== 1)
+#     df2 = @subset(merged_df, :periodpoint .== 2)
+#     df3 = @subset(merged_df, :periodpoint .== 3)
+#     df4 = @subset(merged_df, :periodpoint .== 4)
+#     scatter(df1.N, df1.N_1, color="#FDE725FF", label="1", ms=3)
+#     scatter!(df2.N, df2.N_1, color="#73D055FF", label="2", ms=3)
+#     scatter!(df3.N, df3.N_1, color="#238A8DFF", label="3", ms=3)
+#     scatter!(df4.N, df4.N_1, color="#440154FF", label="4", ms=3)
+#     xlabel!("N(t-3)")
+#     ylabel!("N(t)")
+#     # savefig(joinpath(abpath(), "figs/timeemedding_a108_Rickerconstant.pdf"))
+# end
+
+let #tau=5 (odd)
+    datatau5 = cleanxppautdat_onepar("src/xppaut/RickerConstanttau5_a.dat")
+    tau5lowerbound = alowerconstraint(RickerPar(p=0.6, τ=5.0, α=0.1, β=0.3, b=200, K=1.0))
+    tau5upperbound = ahigherconstraint(RickerPar(p=0.6, τ=5.0, α=0.1, β=0.3, b=200, K=1.0))
+    datatau5_filtered = sort(@subset(datatau5, :a .> tau5lowerbound), :a)
+    datatau5s1 = @subset(datatau5_filtered, :PointTypeName .== "Stable" .&& :LineNum .== 1.0)
+    datatau5s2pupper = unique(@subset(datatau5_filtered, :PointTypeName .== "Stable" .&& :LineNum .== 2.0 .&& :N1 .> maximum(datatau5s1.N1)), :a)
+    datatau5s2plower = unique(@subset(datatau5_filtered, :PointTypeName .== "Stable" .&& :LineNum .== 2.0 .&& :N1 .< maximum(datatau5s1.N1) .&& :N1 .> 0.1), :a)
+    datatau5s2_0 = @subset(datatau5_filtered, :PointTypeName .== "Stable" .&& :LineNum .== 2.0 .&& :N1 .< 1.00)
+
+    datatau5u1 = unique(@subset(datatau5_filtered, :PointTypeName .== "Unstable" .&& :a .> 15 .&& :LineNum .== 1.0 .&& :N1 .> 0.00), :a)
+    datatau5u2pupper = @subset(datatau5_filtered, :PointTypeName .== "Unstable" .&& :LineNum .== 2.0 .&& :N1 .> maximum(datatau5s1.N1) .&& :a .> maximum(datatau5s1.a) + 0.1)
+    datatau5u2plower = @subset(datatau5_filtered, :PointTypeName .== "Unstable" .&& :LineNum .== 2.0 .&& :N1 .< maximum(datatau5s1.N1) .&& :N1 .> 0 .&& :a .> maximum(datatau5s1.a) + 0.1)
+    # datatau3u3 = unique(@subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :a .> 7.00 .&& :LineNum .== 3.0 .&& :N1 .> 0.00), :a)
+    # datatau3u4upper = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :a .> 7.00 .&& :LineNum .== 4.0 .&& :N1 .> maximum(datatau3s3p4lowerlower.N1))
+    # datatau3u4lower = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :a .> 7.00 .&& :LineNum .== 4.0 .&& :N1 .< maximum(datatau3s3p4lowerlower.N1) .&& :N1 .> 0.001)
+    datatau5u0 = @subset(datatau5_filtered, :PointTypeName .== "Unstable" .&& :LineNum .== 2.0 .&& :N1 .< 0.001)
+    # datatau3ul0 = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :LineNum .== 1.0 .&& :N1 .< 0.001)
+
+    plot(datatau5s1.a, datatau5s1.N1, color=:black, label="Stable")
+    plot!(datatau5s2pupper.a, datatau5s2pupper.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau5s2plower.a, datatau5s2plower.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau5s2_0.a, datatau5s2_0.N1, color=:black, linestyle=:solid, label="")
+    plot!(datatau5u1.a, datatau5u1.N1, color=:black, linestyle=:dash, lw=1.5, label="Unstable")
+    plot!(datatau5u2pupper.a, datatau5u2pupper.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    plot!(datatau5u2plower.a, datatau5u2plower.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    plot!(datatau5u0.a, datatau5u0.N1, color=:black, linestyle=:dash, lw=1.5, label="")
+    ylabel!("N*")
+    xlabel!("a")
+    xlims!(0.0, tau5upperbound + 0.1)
+    ylims!(-0.5, 30.0)
+    # println(maximum(datatau5s2plower.a))
+end
+
+let #Time embedding for tau=5
+    endtime = 1000000
+    finalts = 999000
+    timeseriesp2 = model_recursion(0.1, endtime, RickerPar(τ=5, p=0.6, a=20.5, α=0.1, β=0.3, K=1.0, b=200), RickerConstant_model)
+    dfp2 = DataFrame(time = 0:endtime, N = timeseriesp2)
+    dfp2.periodpoint = mod.(dfp2.time, 2) .+ 1
+    # dfp2.periodpoint = map(x -> x == 1 ? 3 : x == 2 ? 4 : x == 3 ? 1 : x == 4 ? 2 : x, dfp4.periodpoint)
+    dfxaxisp2 = @subset(dfp2, :time .>= finalts-5 .&& :time .<= endtime-5)
+    select!(dfxaxisp2, Not(:periodpoint))
+    dfyaxisp2 = @subset(dfp2, :time .>= finalts)
+    dfxaxisp2.row = 1:nrow(dfxaxisp2)
+    dfyaxisp2.row = 1:nrow(dfyaxisp2)
+    merged_dfp2 = leftjoin(dfxaxisp2, dfyaxisp2, on=:row, makeunique=true)
+    select!(merged_dfp2, Not([:time, :time_1, :row]))
+    df1p2 = @subset(merged_dfp2, :periodpoint .== 1)
+    df2p2 = @subset(merged_dfp2, :periodpoint .== 2)
+    timeseries = model_recursion(0.1, endtime, RickerPar(τ=5, p=0.6, a=20.7, α=0.1, β=0.3, K=1.0, b=200), RickerConstant_model)
+    df = DataFrame(time = 0:endtime, N = timeseries)
+    df.periodpoint = mod.(df.time, 2) .+ 1
+    dfxaxis = @subset(df, :time .>= finalts-5 .&& :time .<= endtime-5)
+    select!(dfxaxis, Not(:periodpoint))
+    dfyaxis = @subset(df, :time .>= finalts)
+    dfxaxis.row = 1:nrow(dfxaxis)
+    dfyaxis.row = 1:nrow(dfyaxis)
+    merged_df = leftjoin(dfxaxis, dfyaxis, on=:row, makeunique=true)
+    select!(merged_df, Not([:time, :time_1, :row]))
+    df1 = @subset(merged_df, :periodpoint .== 1)
+    df2 = @subset(merged_df, :periodpoint .== 2)
+    scatter(df1.N, df1.N_1, color="#FDE725FF", label="1", ms=3)
+    scatter!(df2.N, df2.N_1, color="#73D055FF", label="2", ms=3)
+
+    scatter!(df1p2.N, df1p2.N_1, color="#FDE725FF", label="", ms=8, marker=:star5)
+    scatter!(df2p2.N, df2p2.N_1, color="#73D055FF", label="", ms=8, marker=:star5)
+    scatter!([NaN], [NaN], colour=:black,marker=:star5, label="Period Two")
+    scatter!([NaN], [NaN], colour=:black, marker=:circle, label="N-S")
+    
+    xlabel!("N(t-5)")
+    ylabel!("N(t)")
 
 end
 
