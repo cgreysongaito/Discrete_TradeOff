@@ -1,7 +1,7 @@
 include("packages.jl")
 # default(grid=false, linewidth=3, tickfontsize=12, legendfontsize=10, guidefontsize=15)
 include("TradeOffs_CommonCode.jl")
-
+using CSV
 """
     cleanxppautdat(file_path::String) -> DataFrame
 
@@ -13,6 +13,8 @@ Reads and processes data from a file, returning a cleaned DataFrame.
 # Returns
 - `DataFrame`: Cleaned DataFrame with columns `:a`, `:Lowp`, and `:PointTypeName`.
 """
+
+alowerconstraint(RickerPar(p=0.6, τ=1.0, α=0.1, β=0.3, b=200, K=1.0))
 function cleanxppautdat_onepar(file_path)
     datalm = readdlm(file_path)
     data = DataFrame(datalm, [:a, :N1, :N2, :PointType1, :LineNum, :PointType2])
@@ -38,6 +40,49 @@ function cleanxppautdat_twopar(file_path)
 end
 
 #RickerConstant
+#Calculate max and min for Neimark-Sacker
+function maxminNS(τval, arange, time, trans)
+    maxdata=zeros(length(arange))
+    mindata=zeros(length(arange))
+    @threads for ai in eachindex(arange)
+        timeseries = model_recursion(0.1, time, RickerPar(τ=τval, a=arange[ai], p=0.6, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_model)[trans:end]
+        maxdata[ai] = maximum(timeseries)
+        mindata[ai] = minimum(timeseries)
+    end
+    return arange, maxdata, mindata
+end
+
+let #create max min N-S data for even tau Ricker constant
+    ahigh2=ahigherconstraint(RickerPar(p=0.6, τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
+    maxmin2=maxminNS(2.0, 14.39:0.01:ahigh2, 1000000, 999000)
+    ahigh4=ahigherconstraint(RickerPar(p=0.6, τ=4.0, α=0.1, β=0.3, b=200, K=1.0))
+    maxmin4=maxminNS(4.0, 12.99:0.01:ahigh4, 1000000, 999000)
+    ahigh6=ahigherconstraint(RickerPar(p=0.6, τ=6.0, α=0.1, β=0.3, b=200, K=1.0))
+    maxmin6=maxminNS(6.0, 32.05:0.01:ahigh6, 1000000, 999000)
+
+    df_maxmin2 = DataFrame(arange = maxmin2[1], maximum = maxmin2[2], minimum = maxmin2[3])
+    CSV.write("data/maxmin2.csv", df_maxmin2)
+
+    df_maxmin4 = DataFrame(arange = maxmin4[1], maximum = maxmin4[2], minimum = maxmin4[3])
+    CSV.write("data/maxmin4.csv", df_maxmin4)
+
+    df_maxmin6 = DataFrame(arange = maxmin6[1], maximum = maxmin6[2], minimum = maxmin6[3])
+    CSV.write("data/maxmin6.csv", df_maxmin6)
+end
+
+test=maxminNS(6.0, 32.05:0.01:32.5, 1000000, 999000)
+test[1]
+
+let 
+    timeseries = model_recursion(0.1, 1000000, RickerPar(τ=6.0, a=35.0, p=0.6, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_model)[990000:end]
+    println("Max: ", maximum(timeseries), " Min: ", minimum(timeseries))
+    plot(timeseries, color=:black, label="τ=6.0, a=32.05", linewidth=2)
+    xlabel!("Time")
+    ylabel!("N")
+end
+ahigherconstraint(RickerPar(p=0.6, τ=6.0, α=0.1, β=0.3, b=200, K=1.0))
+
+
 let #Even tau
     datatau2 = cleanxppautdat_onepar("src/xppaut/RickerConstanttau2_a.dat")
     tau2lowerbound = alowerconstraint(RickerPar(p=0.6, τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
@@ -57,6 +102,11 @@ let #Even tau
     datatau6s = unique(@subset(datatau6_filtered, :PointTypeName .== "Stable" .&& :N1 .> 0.00), :a)
     datatau6ua = @subset(datatau6_filtered, :PointTypeName .== "Unstable" .&& :N1 .> 6.00)
     datatau6ub = @subset(datatau6_filtered, :PointTypeName .== "Unstable" .&& :N1 .< 1.00)
+    ahigh6=ahigherconstraint(RickerPar(p=0.6, τ=6.0, α=0.1, β=0.3, b=200, K=1.0))
+    maxmindata2=CSV.read("data/maxmin2.csv", DataFrame)
+    maxmindata4=CSV.read("data/maxmin4.csv", DataFrame)
+    maxmindata6=CSV.read("data/maxmin6.csv", DataFrame)
+
     plot(datatau2s.a, datatau2s.N1, color="#73D055FF", label="τ=2.0")
     plot!(datatau2ua.a, datatau2ua.N1, color="#73D055FF", linestyle=:dash, label="")
     plot!(datatau4s.a, datatau4s.N1, color="#1F968BFF", label="τ=4.0")
@@ -65,9 +115,16 @@ let #Even tau
     plot!(datatau6ua.a, datatau6ua.N1, color="#404788FF", linestyle=:dash, label="")
     plot!([-1], [0], linestyle=:solid, color=:black, label="Stable")
     plot!([-1], [0], linestyle=:dash, color=:black, label="Unstable")
+    plot!(maxmindata2.arange, maxmindata2.maximum, color=:black, linestyle=:dot, label="Max")
+    plot!(maxmindata2.arange, maxmindata2.minimum, color=:black, linestyle=:dot, label="Min")
+    plot!(maxmindata4.arange, maxmindata4.maximum, color=:black, linestyle=:dot, label="Max")
+    plot!(maxmindata4.arange, maxmindata4.minimum, color=:black, linestyle=:dot, label="Min")
+    
+    plot!(maxmindata6.arange, maxmindata6.maximum, color=:black, linestyle=:dot, label="Max")
+    plot!(maxmindata6.arange, maxmindata6.minimum, color=:black, linestyle=:dot, label="Min")
     xlabel!("a")
     ylabel!("N*")
-    ylims!(-0.5, 15.0)
+    ylims!(-0.5, 50.0)
     xlims!(0.0, 38.0)
     # println(maximum(datatau4s.a))
     # savefig(joinpath(abpath(), "figs/RickerConstanttaueven_a.pdf"))
@@ -99,25 +156,6 @@ let #Time embedding for tau=6
     ylabel!("N(t)")
 
 end
-
-# function branchsplitter2(subsetteddata)
-#     series = []
-#     current_series = DataFrame()
-#     n = nrow(subsetteddata)
-#     i = 1
-#     while i <= n
-#         push!(current_series, subsetteddata[i, :])
-#         if i < n && abs(subsetteddata.N1[i+1] - subsetteddata.N1[i]) > 0.5
-#             push!(series, current_series)
-#             current_series = DataFrame()
-#         end
-#         i += 1
-#     end
-#     if nrow(current_series) > 0
-#         push!(series, current_series)
-#     end
-#     return series
-# end
 
 let #tau=3 (odd)
     datatau3 = cleanxppautdat_onepar("src/xppaut/RickerConstanttau3_a.dat")
@@ -315,123 +353,150 @@ let #Time embedding for tau=5
 
 end
 
-let
-    alow = alowerconstraint(RickerPar(p=0.3, τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
-    arange = alow:0.1:15.0
-    fillbottom = zeros(length(arange))
-    data = cleanxppautdat("src/xppaut/RickerConstanttau2.dat")
-    bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
-    hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
-    phigh = [phigherconstraint(RickerPar(a=aval, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
-    plot(bp_data.a, bp_data.Lowp, label="Transcritical", lw=2)
-    plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker", lw=2)
-    plot!(arange, fillbottom, fillrange=phigh, fillalpha=0.2, c=1, label="Parameter space")
+# let
+#     alow = alowerconstraint(RickerPar(p=0.3, τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
+#     arange = alow:0.1:15.0
+#     fillbottom = zeros(length(arange))
+#     data = cleanxppautdat_twopar("src/xppaut/RickerConstanttau2.dat")
+#     bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
+#     hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
+#     phigh = [phigherconstraint(RickerPar(a=aval, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
+#     plot(bp_data.a, bp_data.Lowp, label="Transcritical", lw=2)
+#     plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker", lw=2)
+#     plot!(arange, fillbottom, fillrange=phigh, fillalpha=0.2, c=1, label="Parameter space")
+#     xlabel!("a")
+#     ylabel!("p")
+#     xlims!(9.8, 14.5)
+#     ylims!(0.0, 1.0)
+#     title!("τ = 2.0")
+# end
+
+# let
+#     alow = alowerconstraint(RickerPar(p=0.3, τ=3.0, α=0.1, β=0.3, b=200, K=1.0))
+#     arange = alow:0.1:15.0
+#     fillbottom = zeros(length(arange))
+#     data = cleanxppautdat("src/xppaut/RickerConstanttau3woPD.dat")
+#     bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
+#     hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
+#     phigh = [phigherconstraint(RickerPar(a=aval, τ=3.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
+#     pddata = perioddoublecurve(4.3:0.1:15.0, 3)
+#     # return pddata
+#     plot(bp_data.a, bp_data.Lowp, label="Transcritical", lw=2)
+#     plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker", lw=2)
+#     plot!(pddata[:, 1], pddata[:, 2], label="Period doubling", lw=2)
+#     plot!(arange, fillbottom, fillrange=phigh, fillalpha=0.2, c=1, label="Parameter space")
+#     xlabel!("a")
+#     ylabel!("p")
+#     xlims!(0.0, 15.0)
+#     ylims!(0.0, 1.0)
+#     title!("τ = 3.0")
+#     savefig(joinpath(abpath(), "figs/RickerConstanttau3wPD.pdf"))
+# end
+
+# let
+#     alow = alowerconstraint(RickerPar(p=0.3, τ=4.0, α=0.1, β=0.3, b=200, K=1.0))
+#     arange = alow:0.1:15.0
+#     fillbottom = zeros(length(arange))
+#     data = cleanxppautdat("src/xppaut/RickerConstanttau4.dat")
+#     bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
+#     hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
+#     phigh = [phigherconstraint(RickerPar(a=aval, τ=4.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
+#     plot(bp_data.a, bp_data.Lowp, label="Transcritical", lw=2)
+#     plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker", lw=2)
+#     plot!(pddata[:, 1], pddata[:, 2], label="Period doubling", lw=2)
+#     plot!(arange, fillbottom, fillrange=phigh, fillalpha=0.2, c=1, label="Parameter space")
+#     xlabel!("a")
+#     ylabel!("p")
+#     xlims!(0.0, 15.0)
+#     ylims!(0.0, 1.0)
+#     title!("τ = 4.0")
+# end
+
+# let
+#     alow = alowerconstraint(RickerPar(p=0.3, τ=5.0, α=0.1, β=0.3, b=200, K=1.0))
+#     arange = alow:0.1:22.0
+#     fillbottom = zeros(length(arange))
+#     data = cleanxppautdat("src/xppaut/RickerConstanttau5.dat")
+#     bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
+#     hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
+#     pddata = perioddoublecurve(5.6:0.1:22.0, 5)
+#     phigh = [phigherconstraint(RickerPar(a=aval, τ=5.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
+#     plot(bp_data.a, bp_data.Lowp, label="Transcritical", lw=2)
+#     plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker", lw=2)
+#     plot!(pddata[:, 1], pddata[:, 2], label="Period doubling", lw=2)
+#     plot!(arange, fillbottom, fillrange=phigh, fillalpha=0.2, c=1, label="Parameter space")
+#     xlabel!("a")
+#     ylabel!("p")
+#     xlims!(0.0, 22.0)
+#     ylims!(0.0, 1.0)
+#     title!("τ = 5.0")
+# end
+
+let #ADD tau=1 #dimension 2 (a & p) bifurcation diagram of Ricker Constant 
+    datatau1 = cleanxppautdat_twopar("src/xppaut/RickerConstanttau1.dat")
+    bp_datatau1 = unique(@subset(datatau1, :PointTypeName .== "BP"), :Low2ndpar)
+    hp_datatau1 = unique(@subset(datatau1, :PointTypeName .== "HP"), :Low2ndpar)
+    datatau2 = cleanxppautdat_twopar("src/xppaut/RickerConstanttau2.dat")
+    bp_datatau2 = unique(@subset(datatau2, :PointTypeName .== "BP"), :Low2ndpar)
+    hp_datatau2 = unique(@subset(datatau2, :PointTypeName .== "HP"), :Low2ndpar)
+    datatau3 = cleanxppautdat_twopar("src/xppaut/RickerConstanttau3.dat")
+    bp_datatau3 = unique(@subset(datatau3, :PointTypeName .== "BP"), :Low2ndpar)
+    hp_datatau3 = unique(@subset(datatau3, :PointTypeName .== "HP"), :Low2ndpar)
+    datatau4 = cleanxppautdat_twopar("src/xppaut/RickerConstanttau4.dat")
+    bp_datatau4 = unique(@subset(datatau4, :PointTypeName .== "BP"), :Low2ndpar)
+    hp_datatau4 = unique(@subset(datatau4, :PointTypeName .== "HP"), :Low2ndpar)
+    # datatau5 = cleanxppautdat_twopar("src/xppaut/RickerConstanttau5.dat")
+    # bp_datatau5 = unique(@subset(datatau5, :PointTypeName .== "BP"), :Low2ndpar)
+    # hp_datatau5 = unique(@subset(datatau5, :PointTypeName .== "HP"), :Low2ndpar)
+    # datatau6 = cleanxppautdat_twopar("src/xppaut/RickerConstanttau6.dat")
+    # bp_datatau6 = unique(@subset(datatau6, :PointTypeName .== "BP"), :Low2ndpar)
+    # hp_datatau6 = unique(@subset(datatau6, :PointTypeName .== "HP"), :Low2ndpar)
+    datatau8 = cleanxppautdat_twopar("src/xppaut/RickerConstanttau8.dat")
+    bp_datatau8 = unique(@subset(datatau8, :PointTypeName .== "BP"), :Low2ndpar)
+    hp_datatau8 = unique(@subset(datatau8, :PointTypeName .== "HP"), :Low2ndpar)
+    plot(bp_datatau1.a, bp_datatau1.Low2ndpar, lw=2, linestyle=:solid, color=:black, label="τ=1")
+    plot!(hp_datatau1.a, hp_datatau1.Low2ndpar, lw=2, linestyle=:dash, color=:black, label="")
+    plot!(bp_datatau2.a, bp_datatau2.Low2ndpar, lw=2, linestyle=:solid, color=:blue, label="τ=2")
+    plot!(hp_datatau2.a, hp_datatau2.Low2ndpar, lw=2, linestyle=:dash, color=:blue, label="")
+    plot!(bp_datatau3.a, bp_datatau3.Low2ndpar, lw=2, linestyle=:solid, color=:purple, label="τ=3")
+    plot!(hp_datatau3.a, hp_datatau3.Low2ndpar, lw=2, linestyle=:dash, color=:purple, label="")
+    plot!(bp_datatau4.a, bp_datatau4.Low2ndpar, lw=2, linestyle=:solid, color=:red, label="τ=4")
+    plot!(hp_datatau4.a, hp_datatau4.Low2ndpar, lw=2, linestyle=:dash, color=:red, label="")
+    # plot!(bp_datatau5.a, bp_datatau5.Low2ndpar, lw=2, linestyle=:solid, color=:green, label="τ=5")
+    # plot!(hp_datatau5.a, hp_datatau5.Low2ndpar, lw=2, linestyle=:dash, color=:green, label="")
+    # plot!(bp_datatau6.a, bp_datatau6.Low2ndpar, lw=2, linestyle=:solid, color=:orange, label="τ=6")
+    # plot!(hp_datatau6.a, hp_datatau6.Low2ndpar, lw=2, linestyle=:dash, color=:orange, label="")
+    plot!(bp_datatau8.a, bp_datatau8.Low2ndpar, lw=2, linestyle=:solid, color=:brown, label="τ=8")
+    plot!(hp_datatau8.a, hp_datatau8.Low2ndpar, lw=2, linestyle=:dash, color=:brown, label="")
+    plot!([NaN], [NaN], lw=2, linestyle=:solid, color=:black, label="Transcritical")
+    plot!([NaN], [NaN], lw=2, linestyle=:dash, color=:black, label="Oscillations")
+    scatter!([13.0], [0.57205], color=:black, marker=:star5, ms=12, label="")
+    xlims!(0.0, 40.0)
+    ylims!(0.0, 1.0)
     xlabel!("a")
     ylabel!("p")
-    xlims!(9.8, 14.5)
-    ylims!(0.0, 1.0)
-    title!("τ = 2.0")
+    plot!(legendfontsize=10)
+    # savefig(joinpath(abpath(), "figs/apbifurcation_RickerConstant.pdf"))
 end
-
-let
-    alow = alowerconstraint(RickerPar(p=0.3, τ=3.0, α=0.1, β=0.3, b=200, K=1.0))
-    arange = alow:0.1:15.0
-    fillbottom = zeros(length(arange))
-    data = cleanxppautdat("src/xppaut/RickerConstanttau3woPD.dat")
-    bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
-    hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
-    phigh = [phigherconstraint(RickerPar(a=aval, τ=3.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
-    pddata = perioddoublecurve(4.3:0.1:15.0, 3)
-    # return pddata
-    plot(bp_data.a, bp_data.Lowp, label="Transcritical", lw=2)
-    plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker", lw=2)
-    plot!(pddata[:, 1], pddata[:, 2], label="Period doubling", lw=2)
-    plot!(arange, fillbottom, fillrange=phigh, fillalpha=0.2, c=1, label="Parameter space")
-    xlabel!("a")
-    ylabel!("p")
-    xlims!(0.0, 15.0)
-    ylims!(0.0, 1.0)
-    title!("τ = 3.0")
-    savefig(joinpath(abpath(), "figs/RickerConstanttau3wPD.pdf"))
-end
-
-let
-    alow = alowerconstraint(RickerPar(p=0.3, τ=4.0, α=0.1, β=0.3, b=200, K=1.0))
-    arange = alow:0.1:15.0
-    fillbottom = zeros(length(arange))
-    data = cleanxppautdat("src/xppaut/RickerConstanttau4.dat")
-    bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
-    hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
-    phigh = [phigherconstraint(RickerPar(a=aval, τ=4.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
-    plot(bp_data.a, bp_data.Lowp, label="Transcritical", lw=2)
-    plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker", lw=2)
-    plot!(pddata[:, 1], pddata[:, 2], label="Period doubling", lw=2)
-    plot!(arange, fillbottom, fillrange=phigh, fillalpha=0.2, c=1, label="Parameter space")
-    xlabel!("a")
-    ylabel!("p")
-    xlims!(0.0, 15.0)
-    ylims!(0.0, 1.0)
-    title!("τ = 4.0")
-end
-
-let
-    alow = alowerconstraint(RickerPar(p=0.3, τ=5.0, α=0.1, β=0.3, b=200, K=1.0))
-    arange = alow:0.1:22.0
-    fillbottom = zeros(length(arange))
-    data = cleanxppautdat("src/xppaut/RickerConstanttau5.dat")
-    bp_data = unique(@subset(data, :PointTypeName .== "BP"), :Lowp)
-    hp_data = unique(@subset(data, :PointTypeName .== "HP"), :Lowp)
-    pddata = perioddoublecurve(5.6:0.1:22.0, 5)
-    phigh = [phigherconstraint(RickerPar(a=aval, τ=5.0, α=0.1, β=0.3, b=200, K=1.0)) for aval in arange]
-    plot(bp_data.a, bp_data.Lowp, label="Transcritical", lw=2)
-    plot!(hp_data.a, hp_data.Lowp, label="Neimarck-Sacker", lw=2)
-    plot!(pddata[:, 1], pddata[:, 2], label="Period doubling", lw=2)
-    plot!(arange, fillbottom, fillrange=phigh, fillalpha=0.2, c=1, label="Parameter space")
-    xlabel!("a")
-    ylabel!("p")
-    xlims!(0.0, 22.0)
-    ylims!(0.0, 1.0)
-    title!("τ = 5.0")
-end
-
-let
-    datatau2 = cleanxppautdat("src/xppaut/RickerConstanttau2.dat")
-    bp_datatau2 = unique(@subset(datatau2, :PointTypeName .== "BP"), :Lowp)
-    hp_datatau2 = unique(@subset(datatau2, :PointTypeName .== "HP"), :Lowp)
-    datatau3 = cleanxppautdat("src/xppaut/RickerConstanttau3woPD.dat")
-    bp_datatau3 = unique(@subset(datatau3, :PointTypeName .== "BP"), :Lowp)
-    hp_datatau3 = unique(@subset(datatau3, :PointTypeName .== "HP"), :Lowp)
-    datatau4 = cleanxppautdat("src/xppaut/RickerConstanttau4.dat")
-    bp_datatau4 = unique(@subset(datatau4, :PointTypeName .== "BP"), :Lowp)
-    hp_datatau4 = unique(@subset(datatau4, :PointTypeName .== "HP"), :Lowp)
-    datatau5 = cleanxppautdat("src/xppaut/RickerConstanttau5.dat")
-    bp_datatau5 = unique(@subset(datatau5, :PointTypeName .== "BP"), :Lowp)
-    hp_datatau5 = unique(@subset(datatau5, :PointTypeName .== "HP"), :Lowp)
-    plot(bp_datatau2.a, bp_datatau2.Lowp, lw=2, linestyle=:solid, color=:blue, label="BP τ=2")
-    plot!(hp_datatau2.a, hp_datatau2.Lowp, lw=2, linestyle=:dash, color=:blue, label="HP τ=2")
-    plot!(bp_datatau3.a, bp_datatau3.Lowp, lw=2, linestyle=:solid, color=:purple, label="BP τ=3")
-    plot!(hp_datatau3.a, hp_datatau3.Lowp, lw=2, linestyle=:dash, color=:purple, label="HP τ=3")
-    plot!(bp_datatau4.a, bp_datatau4.Lowp, lw=2, linestyle=:solid, color=:red, label="BP τ=4")
-    plot!(hp_datatau4.a, hp_datatau4.Lowp, lw=2, linestyle=:dash, color=:red, label="HP τ=4")
-    plot!(bp_datatau5.a, bp_datatau5.Lowp, lw=2, linestyle=:solid, color=:green, label="BP τ=5")
-    plot!(hp_datatau5.a, hp_datatau5.Lowp, lw=2, linestyle=:dash, color=:green, label="HP τ=5")
-    xlims!(0.0, 22.0)
-    ylims!(0.0, 1.0)
-    xlabel!("a")
-    ylabel!("p")
-    savefig(joinpath(abpath(), "figs/apbifurcation_RickerConstant.pdf"))
-end
-
 
 #Tau create and then kill oscillations
-let
+let 
     par = RickerPar(a=13.0, p=0.57205, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)
-    RCorbitdata = flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par, 50; upperval=5))
-    p2 = scatter(RCorbitdata[1], log.(RCorbitdata[2]), color=:black, label="")
+    RCorbitdata = flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par, 50; upperval=8))
+    p2 = scatter(RCorbitdata[1], log10.(RCorbitdata[2] .+1), color=:black, label="")
+    scatter!([1.0], [0.0], color=:black, label="")
     xlabel!("τ")
-    ylabel!("log(N)")
-    xlims!(0.0, 5.0)
+    ylabel!("log10(N+1)")
+    xlims!(0.0, 8.0)
     # savefig(joinpath(abpath(), "figs/tauorbitdiagram_RickerRicker.pdf"))
+end
+
+let 
+    timeseries = model_recursion(0.1, 1000000, RickerPar(τ=8.0, a=13.0, p=0.57205, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_model)[990000:end]
+    println("Max: ", maximum(timeseries), " Min: ", minimum(timeseries))
+    plot(timeseries, color=:black, label="τ=6.0, a=32.05", linewidth=2)
+    xlabel!("Time")
+    ylabel!("N")
 end
 
 
