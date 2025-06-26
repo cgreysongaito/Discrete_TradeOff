@@ -75,6 +75,21 @@ let
 end
 
 let 
+    time = 10000
+    finalts=9900
+    timeseries = model_recursion(0.1,time,RickerPar(τ=1,p=0.57205, a=13.0,α=0.1,β=0.3,K=1.0,b=200), RickerConstant_wofec_model, optτ=2)
+    return timeseries
+    # p1=scatter(timeseries[finalts-1:end-1], timeseries[finalts:end])
+    # xlabel!("N(t-3)")
+    # ylabel!("N(t)")
+    # p2=scatter(0.0:1.0:101, timeseries[finalts:end])
+    # xlabel!("t")
+    # ylabel!("N(t)")
+    # plot(p1,p2, layout=(2,1), size = (500,700), legend=false, guidefontsize=10, ms=2)
+    # # savefig(joinpath(abpath(), "figs/timeemedding_a108_Rickerconstant.pdf"))
+end
+
+let 
     time = 100000
     finalts=99000
     timeseries = model_recursion(0.1,time,RickerPar(τ=1,p=0.6, a=29.844,α=0.1,β=0.3,K=1.0,b=200), RickerConstant_model)

@@ -15,6 +15,12 @@ function RickerConstant_model(Ndata, t, para)
         return (Ndata[t] * exp(-α-β*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
 end
 
+function RickerConstant_wofec_model(Ndata, t, para; optτ::Int64=0)
+    @unpack α,β,a,b,K,p,τ = para
+    g=a-b*exp(-K*(optτ+1))
+        return (Ndata[t] * exp(-α-β*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
+end
+
 function RickerBeverton_model(Ndata, t, para)
     @unpack α,β,a,b,K,p,D,C,τ = para
     g=a-b*exp(-K*(τ+1))
@@ -80,7 +86,7 @@ function phigherconstraint(para)
 end
 
 
-function model_recursion(N0::Float64, time::Int64, para, model_func)
+function model_recursion(N0::Float64, time::Int64, para, model_func; optτ::Int64=0)
     if !isa(time, Int64)
         error("time variable needs to be Int64")
     end
@@ -90,7 +96,7 @@ function model_recursion(N0::Float64, time::Int64, para, model_func)
     @unpack τ = para
     N = fill(N0, τ+1)
     for t in τ+1:τ+time
-        newN = model_func(N, t, para)
+        newN = model_func(N, t, para; optτ)
         append!(N, newN)
     end
     return N[τ+1:end]
