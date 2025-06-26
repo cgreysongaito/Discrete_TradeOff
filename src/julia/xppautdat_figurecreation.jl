@@ -69,9 +69,6 @@ let #create max min N-S data for even tau Ricker constant
     CSV.write("data/maxmin6.csv", df_maxmin6)
 end
 
-test=maxminNS(6.0, 32.05:0.01:32.5, 1000000, 999000)
-test[1]
-
 let 
     timeseries = model_recursion(0.1, 1000000, RickerPar(τ=6.0, a=35.0, p=0.6, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_model)[990000:end]
     println("Max: ", maximum(timeseries), " Min: ", minimum(timeseries))
@@ -79,7 +76,6 @@ let
     xlabel!("Time")
     ylabel!("N")
 end
-ahigherconstraint(RickerPar(p=0.6, τ=6.0, α=0.1, β=0.3, b=200, K=1.0))
 
 
 let #Even tau
@@ -482,9 +478,14 @@ end
 #Tau create and then kill oscillations
 let 
     par = RickerPar(a=13.0, p=0.57205, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)
-    RCorbitdata = flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par, 50; upperval=8))
-    p2 = scatter(RCorbitdata[1], log10.(RCorbitdata[2] .+1), color=:black, ms=8,label="")
+    RCorbitdata = flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par, 50; optτ=2, upperval=8))
+    RCorbitdata_wofec = flattenorbitdata(orbitdiagrams(RickerConstant_wofec_model, "τ", par, 50; optτ=2, upperval=8))
+    timeseries = model_recursion(10.0, 1000000, RickerPar(a=13.0, p=0.57205, τ=1.0, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_wofec_model; optτ=2)
+    dataN = timeseries[end-50:end]
+    p2 = scatter(RCorbitdata[1], log10.(RCorbitdata[2] .+1), color=:black, ms=8,label="With fecundity\nbenefit")
+    scatter!(RCorbitdata_wofec[1], log10.(RCorbitdata_wofec[2] .+1), color=:blue, ms=5, markerstrokecolor=:blue, label="Without fecundity\nbenefit")
     scatter!([1.0], [0.0], color=:black, ms=8, label="")
+    scatter!(repeat([1],51), log10.(dataN .+1), color=:blue, ms=5, markerstrokecolor=:blue, label="")
     xlabel!("τ")
     ylabel!("log10(N+1)")
     xticks!([0, 2, 4, 6, 8])
@@ -497,8 +498,13 @@ end
 let
     par = RickerPar(a=13.0, p=0.35, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)
     RCorbitdata = flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par, 50; upperval=8))
-    p2 = scatter(RCorbitdata[1], RCorbitdata[2], color=:black, ms=8, label="")
+    RCorbitdata_wofec = flattenorbitdata(orbitdiagrams(RickerConstant_wofec_model, "τ", par, 50; optτ=2, upperval=8))
+    timeseries = model_recursion(10.0, 1000000, RickerPar(a=13.0, p=0.35, τ=1.0, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_wofec_model; optτ=2)
+    dataN = timeseries[end-50:end]
+    p2 = scatter(RCorbitdata[1], RCorbitdata[2], color=:black, ms=8, label="With fecundity\nbenefit")
+    scatter!(RCorbitdata_wofec[1], log10.(RCorbitdata_wofec[2] .+1), color=:blue, ms=5, markerstrokecolor=:blue, label="Without fecundity\nbenefit")
     scatter!([1.0], [0.0], color=:black, ms=8,label="")
+    scatter!(repeat([1],51), log10.(dataN .+1), color=:blue, ms=5, markerstrokecolor=:blue, label="")
     xlabel!("τ")
     ylabel!("N")
     xlims!(0.0, 8.5)

@@ -86,22 +86,27 @@ end
 
 let 
     τrange = 0:1:15
-    Cval01data=NdataBHBH(τrange, 0.1, BevHoltPar(α=0.1,β=0.3,D=0.1,a=90.0,b=200.0,K=1.0))
-    Cval05data=NdataBHBH(τrange, 0.5, BevHoltPar(α=0.1,β=0.3,D=0.1,a=90.0,b=200.0,K=1.0))
-    Cval10data=NdataBHBH(τrange, 1.0, BevHoltPar(α=0.1,β=0.3,D=0.1,a=90.0,b=200.0,K=1.0))
+    Cval01data=NdataBHBH(τrange, 0.1, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
+    Cval05data=NdataBHBH(τrange, 0.5, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
+    Cval10data=NdataBHBH(τrange, 1.0, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
     scatter(τrange,Cval01data, color=:blue, label="C=0.1")
     scatter!(τrange,Cval05data, color=:red,label="C=0.5")
     scatter!(τrange,Cval10data, color=:purple,label="C=1.0")
     xlabel!("τ")
     ylabel!("N*(τ)")
     plot!(grid=false)
-    savefig(joinpath(abpath(), "figs/BevHoltBevHolt_tauequi.png"))
+    # savefig(joinpath(abpath(), "figs/BevHoltBevHolt_tauequi.png"))
 end
+
+
 
 let 
     time = 500
-    timeseries = model_recursion(0.1,time,BevHoltPar(τ=3,p=0.55), BevertonHolt_modelII)
+    timeseries = model_recursion(10.0,time,BevHoltPar(τ=1,α=0.1,β=0.3,C=0.3,D=0.1,a=15.0,b=200.0,K=1.0), BevertonHolt_modelII)
+    println(timeseries[end])
+    println(findequil_BHBH(BevHoltPar(τ=1,α=0.1,β=0.3,C=0.3,D=0.1,a=15.0,b=200.0,K=1.0)))
     plot(0:1:time,timeseries)
+    xlims!(0,50)
 end
 
 let
@@ -114,97 +119,4 @@ let
     xlabel!("τ")
     ylabel!("N")
 end
-
-#BevertonHolt Ricker model
-function BHadultsurvival(A, para)
-    @unpack α,β = para
-    return 1/(1+α+β*A)
-end
-
-function juvenilebirth(A, para)
-    @unpack D,C,a,b,K,p,τ = para
-    R = a-b*exp(-K*(τ+1))
-    return R*exp(-D-C*R*A)
-end
-
-function juvenilesurvival(J, para)
-    @unpack D,C = para
-    return exp(-D-C*J)
-end
-
-function adultdensity(A,para)
-    @unpack D, C = para
-    return exp(-D-C*A)
-end
-
-function BRLeslieMatrix(τval, para, AJvector)
-    local_par = deepcopy(para)
-    local_par.τ = τval
-    matrix = zeros(Float64,τval+1,τval+1)
-    matrix[1,1] = BHadultsurvival(AJvector[1], local_par)
-    matrix[2,1] = juvenilebirth(AJvector[1], local_par)
-    matrix[1,τval+1] = juvenilesurvival(AJvector[τval], local_par)
-    for i in 3:τval+1
-        matrix[i,i-1] = juvenilesurvival(AJvector[i-1], local_par)
-    end
-    return matrix
-end
-
-
-BRLeslieMatrix(3, BevHoltPar(τ=3, a=25.0,α=1.5,β=2.0,D=0.5,C=0.15), [0.1, 0.2, 0.3, 0.4])
-function BRmodel_Leslierecursion(τval, time, para, init, lesliematrix)
-    initvector = fill(init, τval+1)
-    AJvector = [Vector{Float64}() for _ in 1:time+1]
-    AJvector[1] = initvector
-    for t in 1:time
-        AJvector[t+1] = lesliematrix(τval, para, AJvector[t])*AJvector[t]
-    end
-    return AJvector
-end
-
-function first_elements(vec_of_vecs)
-    return [vec[1] for vec in vec_of_vecs]
-end
-
-let 
-    time = 5000
-    τval=1
-    timeseries = BRmodel_Leslierecursion(τval, time, BevHoltPar(τ=τval, a=25.0,α=1.5,β=2.0,D=0.5,C=0.15), 0.1, BRLeslieMatrix)
-    plot(0:1:time,first_elements(timeseries))
-    # return first_elements(timeseries)[end-50:end]
-end
-
-
-function BRLeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematrix)
-    data = Vector{Vector{Float64}}(undef, length(τrange))
-    @threads for τi in eachindex(τrange)
-        timeseries = BRmodel_Leslierecursion(τrange[τi], time, para, init, lesliematrix)
-        data[τi] = first_elements(timeseries)[end-finalts:end]
-    end
-    return [τrange,data]
-end
-
-function BevRickerLeslie_τ0_model(Ndata, t, para)
-    @unpack α,β,a,b,K,p,τ = para
-    g=a-b*exp(-K*(τ+1))
-        return (Ndata[t] * 1/(1+α+β*Ndata[t])) + g*exp(-α-β*g*Ndata[t])*Ndata[t]
-end
-
-let
-    τrange = 1:1:15
-    # RIorbitdata = model_τorbit(τrange, RickerConstant_model, RickerPar(a=100, p=0.6), 50)
-    # RIIorbitdata = model_τorbit(τrange, RickerBeverton_model, RickerPar(a=100,D=0.5,C=0.15), 50)
-    par=BevHoltPar(τ=0, a=100.0,α=1.5,β=0.1,D=0.9,C=0.15)
-    BRLorbitdata = flattenorbitdata(BRLeslieMatrixOrbitDiagram(τrange, 50000, 100, par, 0.1, BRLeslieMatrix))
-    BRLτ0data = model_recursion(0.1,5000,par, BevRickerLeslie_τ0_model)
-    BRLτ0data_trans=BRLτ0data[end-100:end]
-    p2=scatter(BRLorbitdata[1], BRLorbitdata[2],color=:black, label="")
-    scatter!(zeros(length(BRLτ0data_trans)), BRLτ0data_trans, color=:black, label="")
-    xlabel!("τ")
-    ylabel!("N")
-    xlims!(0.0,15.0)
-    savefig(joinpath(abpath(), "figs/tauorbitdiagram_BHRicker.pdf"))
-end
-
-#Mature dependent survival of immature individuals (immature individuals exposed to density effects with mature individuals)
 

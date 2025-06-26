@@ -4,12 +4,13 @@ function BevertonHolt_model(Ndata, t, para)
         return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (a-b*exp(-K*(τ+1)))*(p^(τ+1))*Ndata[t-τ]
 end
 
-function BevertonHolt_modelII(Ndata, t, para)
+function BevertonHolt_modelII(Ndata, t, para; optτ::Int64=0)
     @unpack α,β,a,b,K,p,D,C,τ = para
-        return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (D*((a-b*exp(-K*(τ+1)))*Ndata[t-τ]))/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*(a-b*exp(-K*(τ+1)))*Ndata[t-τ])
+    g=calc_g(para)
+    return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (D*g*Ndata[t-τ])/((D*(1+D)^(τ+1))+((((1+D)^(τ+1))-1)*C*g*Ndata[t-τ]))
 end
 
-function RickerConstant_model(Ndata, t, para)
+function RickerConstant_model(Ndata, t, para; optτ::Int64=0)
     @unpack α,β,a,b,K,p,τ = para
     g=a-b*exp(-K*(τ+1))
         return (Ndata[t] * exp(-α-β*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
@@ -19,12 +20,6 @@ function RickerConstant_wofec_model(Ndata, t, para; optτ::Int64=0)
     @unpack α,β,a,b,K,p,τ = para
     g=a-b*exp(-K*(optτ+1))
         return (Ndata[t] * exp(-α-β*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
-end
-
-function RickerBeverton_model(Ndata, t, para)
-    @unpack α,β,a,b,K,p,D,C,τ = para
-    g=a-b*exp(-K*(τ+1))
-        return (Ndata[t] * exp(-α-β*Ndata[t])) + (D/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*g*Ndata[t-τ]))*g*Ndata[t-τ]
 end
 
 function RickerLeslie_τ0_model(Ndata, t, para)
@@ -125,7 +120,7 @@ function model_τorbit(τrange, model_func, par::Union{BevHoltPar, RickerPar}, f
     return [τrange,dataN]
 end
 
-function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar, RickerPar}, finalts::Int64; upperval::Union{Float64,Int64}=1.0)
+function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar, RickerPar}, finalts::Int64; optτ::Int64=0, upperval::Union{Float64,Int64}=1.0)
     if paraval == "a" && model_func==RickerConstant_model
         range=round(alowerconstraint(defaultpar), digits=2)+0.1:0.01:round(ahigherconstraint(defaultpar),digits=2)-0.1
     elseif paraval == "a" 
@@ -161,7 +156,7 @@ function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar
         else 
             local_par.τ = range[i]
         end
-        timeseries = model_recursion(10.0, 1000000, local_par, model_func)
+        timeseries = model_recursion(10.0, 1000000, local_par, model_func; optτ)
         dataN[i] = timeseries[end-finalts:end]
     end
     return [range,dataN]

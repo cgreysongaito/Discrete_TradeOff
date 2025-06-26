@@ -90,6 +90,21 @@ let
 end
 
 let 
+    par = RickerPar(τ=1,p=0.57205, a=13.0,α=0.1,β=0.3,K=1.0,b=200)
+    RCorbitdata = flattenorbitdata(orbitdiagrams(RickerConstant_wofec_model, "τ", par, 50; optτ=2, upperval=8))
+    timeseries = model_recursion(10.0, 1000000, par, RickerConstant_wofec_model; optτ=2)
+    dataN = timeseries[end-50:end]
+    p2 = scatter(RCorbitdata[1], log10.(RCorbitdata[2] .+1), color=:black, ms=8,label="")
+    scatter!(repeat([1],51), log10.(dataN .+1), color=:black, ms=8, label="")
+    xlabel!("τ")
+    ylabel!("log10(N+1)")
+    xticks!([0, 2, 4, 6, 8])
+    xlims!(0.0, 8.5)
+    plot!(size=(350, 300))
+    # savefig(joinpath(abpath(), "figs/RickerConstant_tauorbita.pdf"))
+end
+
+let 
     time = 100000
     finalts=99000
     timeseries = model_recursion(0.1,time,RickerPar(τ=1,p=0.6, a=29.844,α=0.1,β=0.3,K=1.0,b=200), RickerConstant_model)
