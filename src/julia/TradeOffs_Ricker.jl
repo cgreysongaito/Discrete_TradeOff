@@ -632,8 +632,8 @@ end
 
 let 
     time = 5000
-    τval=15
-    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval, a=100.0,α=1.5,β=0.1,D=0.9,C=0.15), 0.1, LeslieMatrix)
+    τval=12
+    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval, a=30.0,α=0.1,β=0.3,D=0.1,C=2.0), 0.1, LeslieMatrix)
     # plot(0:1:time,first_elements(timeseries))
     return first_elements(timeseries)[1:1200]
 end

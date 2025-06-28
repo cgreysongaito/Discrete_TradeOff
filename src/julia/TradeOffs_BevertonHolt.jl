@@ -80,8 +80,6 @@ function findequil_BHBH(para)
     end
 end
 
-findequil_BHBH(BevHoltPar(τ=2,α=0.1,β=0.3,D=0.1,C=0.8,a=30.0,b=200.0,K=1.0))
-
 function NdataBHBH_C(τrange,Cval, defaultpara)
     data = zeros(length(τrange))
     for i in eachindex(τrange)
@@ -109,34 +107,32 @@ let
     Cval01data=NdataBHBH_C(τrange, 0.1, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
     Cval05data=NdataBHBH_C(τrange, 0.5, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
     Cval10data=NdataBHBH_C(τrange, 1.0, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
-    using Random
-    scatter(τrange .+ randn(length(τrange)) .* 0.05, Cval01data, color=:blue, label="C=0.1")
-    scatter!(τrange .+ randn(length(τrange)) .* 0.05, Cval05data, color=:red, label="C=0.5")
-    scatter!(τrange .+ randn(length(τrange)) .* 0.05, Cval10data, color=:purple, label="C=1.0")
+    βval01data=NdataBHBH_β(τrange, 0.1, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
+    βval05data=NdataBHBH_β(τrange, 0.5, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
+    βval10data=NdataBHBH_β(τrange, 1.0, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
+    p1=scatter(τrange .+ randn(length(τrange)) .* 0.05, Cval01data, color="#FDE725FF",markersize=6, label="C=0.1")
+    plot!(collect(1:1:15), Cval01data, label="",linestyle=:dash, color="#FDE725FF")
+    scatter!(τrange .+ randn(length(τrange)) .* 0.05, Cval05data, color="#238A8DFF", markersize=6,label="C=0.5")
+    plot!(collect(1:1:15), Cval05data, label="",linestyle=:dash, color="#238A8DFF")
+    scatter!(τrange .+ randn(length(τrange)) .* 0.05, Cval10data, color="#440154FF", markersize=6,label="C=1.0")
+    plot!(collect(1:1:15), Cval10data, label="",linestyle=:dash, color="#440154FF")
     xlabel!("τ")
     ylabel!("N*(τ)")
-    plot!(grid=false)
-    # savefig(joinpath(abpath(), "figs/BevHoltBevHolt_tauequi.png"))
+    p2=scatter(τrange .+ randn(length(τrange)) .* 0.05, βval01data, color="#FDE725FF",markersize=6, label="β=0.1")
+    plot!(collect(1:1:15), βval01data, label="",linestyle=:dash, color="#FDE725FF")
+    scatter!(τrange .+ randn(length(τrange)) .* 0.05, βval05data, color="#238A8DFF", markersize=6,label="β=0.5")
+    plot!(collect(1:1:15), βval05data, label="",linestyle=:dash, color="#238A8DFF")
+    scatter!(τrange .+ randn(length(τrange)) .* 0.05, βval10data, color="#440154FF", markersize=6,label="β=1.0")
+    plot!(collect(1:1:15), βval10data, label="",linestyle=:dash, color="#440154FF")
+    xlabel!("τ")
+    ylabel!("N*(τ)")
+    plot(p1, p2, layout=(2,1), size=(600,600), legend=:topright)
+    savefig(joinpath(abpath(), "figs/BevHoltBevHolt_tauequi.pdf"))
 end
+
+
 
 let 
-    τrange = 1:1:15
-    βval01data=NdataBHBH_β(τrange, 0.3, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
-    βval05data=NdataBHBH_β(τrange, 0.6, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
-    βval10data=NdataBHBH_β(τrange, 1.0, BevHoltPar(α=0.1,β=0.3,D=0.1,a=5.0,b=200.0,K=1.0))
-    using Random
-    scatter(τrange .+ randn(length(τrange)) .* 0.05, βval01data, color=:blue, label="β=0.1")
-    scatter!(τrange .+ randn(length(τrange)) .* 0.05, βval05data, color=:red, label="β=0.5")
-    scatter!(τrange .+ randn(length(τrange)) .* 0.05, βval10data, color=:purple, label="β=1.0")
-    xlabel!("τ")
-    ylabel!("N*(τ)")
-    plot!(grid=false)
-    # savefig(joinpath(abpath(), "figs/BevHoltBevHolt_tauequi.png"))
-end
-
-
-
-  let 
     time = 500
     timeseries = model_recursion(10.0,time,BevHoltPar(τ=1,α=0.1,β=0.3,C=0.3,D=0.1,a=15.0,b=200.0,K=1.0), BevertonHolt_modelII)
     println(timeseries[end])
