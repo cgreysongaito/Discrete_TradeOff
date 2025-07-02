@@ -27,6 +27,65 @@ function RickerLeslie_τ0_model(Ndata, t, para)
     g=a-b*exp(-K*(τ+1))
         return (Ndata[t] * exp(-α-β*Ndata[t])) + g*exp(-α-β*g*Ndata[t])*Ndata[t]
 end
+
+#Leslie matrix version of the Ricker model
+function adultsurvival(A, para)
+    @unpack α,β = para
+    return exp(-α-β*A)
+end
+
+function juvenilebirth(A, para)
+    @unpack D,C,a,b,K,p,τ = para
+    R = a-b*exp(-K*(τ+1))
+    return R*exp(-D-C*R*A)
+end
+
+function juvenilesurvival(J, para)
+    @unpack D,C = para
+    return exp(-D-C*J)
+end
+
+function adultdensity(A,para)
+    @unpack D, C = para
+    return exp(-D-C*A)
+end
+
+function LeslieMatrix(τval, para, AJvector)
+    local_par = deepcopy(para)
+    local_par.τ = τval
+    matrix = zeros(Float64,τval+1,τval+1)
+    matrix[1,1] = adultsurvival(AJvector[1], local_par)
+    matrix[2,1] = juvenilebirth(AJvector[1], local_par)
+    matrix[1,τval+1] = juvenilesurvival(AJvector[τval], local_par)
+    for i in 3:τval+1
+        matrix[i,i-1] = juvenilesurvival(AJvector[i-1], local_par)
+    end
+    return matrix
+end
+
+function model_Leslierecursion(τval, time, para, init, lesliematrix)
+    initvector = fill(init, τval+1)
+    AJvector = [Vector{Float64}() for _ in 1:time+1]
+    AJvector[1] = initvector
+    for t in 1:time
+        AJvector[t+1] = lesliematrix(τval, para, AJvector[t])*AJvector[t]
+    end
+    return AJvector
+end
+
+function first_elements(vec_of_vecs)
+    return [vec[1] for vec in vec_of_vecs]
+end
+
+function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematrix)
+    data = Vector{Vector{Float64}}(undef, length(τrange))
+    @threads for τi in eachindex(τrange)
+        timeseries = model_Leslierecursion(τrange[τi], time, para, init, lesliematrix)
+        data[τi] = first_elements(timeseries)[end-finalts:end]
+    end
+    return [τrange,data]
+end
+
 #TODO switch out second alpha and beta for D and C
 #Parameters for the models
 @with_kw mutable struct BevHoltPar
@@ -162,6 +221,60 @@ function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar
     return [range,dataN]
 end
 
+#Code max 0 or equilibrium point for changing tau
+function BevHoltI_equi(para)
+    @unpack α,β = para
+    m = calc_m(para)
+    equi = ((1+α)*m-α)/(β*(1-m))
+    if equi>0
+        return equi
+    else
+        return 0
+    end
+end
+#root solve BevertonholtBevertonholt equality
+function BHBH_existence_check(para)
+    @unpack α,β,D,C,a,b,K,τ = para
+    g = calc_g(para)
+    return (1-(1/(1+α)))-(g/((1+D)^(τ+1)))
+end
+
+function Nequi_BHBH(N, para)
+    @unpack α,β,D,C,a,b,K,τ = para
+    g = calc_g(para)
+    #equilibrium point
+    return 1-(1/(1+α+β*N))-(D*g)/((D*(1+D)^(τ+1))+(((1+D)^(τ+1))-1)*C*g*N)
+end
+
+function findequil_BHBH(para)
+    if BHBH_existence_check(para) > 0
+        return 0.0 #no interior equilibrium point exists
+    else
+    return find_zero(N -> Nequi_BHBH(N, para), 0.0001)
+    end
+end
+
+function NdataBHBH(CDbetaalpha,τrange,val, defaultpara)
+    data = zeros(length(τrange))
+    for i in eachindex(τrange)
+        local_par = deepcopy(defaultpara)
+        local_par.τ = τrange[i]
+        if CDbetaalpha == "C"
+            local_par.C = val
+        elseif CDbetaalpha == "D"
+            local_par.D = val
+        elseif CDbetaalpha == "β"
+            local_par.β = val
+        elseif CDbetaalpha == "α"
+            local_par.α = val
+        else
+            error("Invalid parameter type specified. Use 'C', 'D', 'β', or 'α'.")
+        end
+        data[i] = findequil_BHBH(local_par)
+    end
+    return data
+end
+
 #Accessory functions
 
 # function plot_combination(single_vector, vector_of_vectors, pointcolor)
@@ -173,6 +286,61 @@ end
 #     end
 #     plot!()
 # end
+"""
+    cleanxppautdat(file_path::String) -> DataFrame
+
+Reads and processes data from a file, returning a cleaned DataFrame.
+
+# Arguments
+- `file_path::String`: Path to the data file.
+
+# Returns
+- `DataFrame`: Cleaned DataFrame with columns `:a`, `:Lowp`, and `:PointTypeName`.
+"""
+
+function cleanxppautdat_onepar(file_path)
+    datalm = readdlm(file_path)
+    data = DataFrame(datalm, [:a, :N1, :N2, :PointType1, :LineNum, :PointType2])
+    @select!(data, :a, :N1, :PointType1, :PointType2, :LineNum)
+    @transform!(data, :PointType1 = Int.(:PointType1), :PointType2 = Int.(:PointType2))
+    @transform!(data, :PointType = string.(:PointType1) .* string.(:PointType2))
+    @transform!(data, :PointTypeName = ifelse.(:PointType .== "10", "Stable", ifelse.(:PointType .== "20", "Unstable", "Other")))
+    @select!(data, :a, :N1, :PointTypeName, :LineNum)
+    # data = sort(data, :N1)
+    return data
+end
+
+function cleanxppautdat_twopar(file_path)
+    datalm = readdlm(file_path)
+    data = DataFrame(datalm, [:a, :Low2ndpar, :High2ndpar, :PointType1, :LineNum, :PointType2])
+    @select!(data, :a, :Low2ndpar, :PointType1, :PointType2, :LineNum)
+    @transform!(data, :PointType1 = Int.(:PointType1), :PointType2 = Int.(:PointType2))
+    @transform!(data, :PointType = string.(:PointType1) .* string.(:PointType2))
+    @transform!(data, :PointTypeName = ifelse.(:PointType .== "25", "BP", ifelse.(:PointType .== "23", "HP", "Other")))
+    @select!(data, :a, :Low2ndpar, :PointTypeName, :LineNum)
+    data = sort(data, :Low2ndpar)
+    return data
+end
+
+function branchsplitter(data)
+    branches = Vector{DataFrame}()
+    current_branch = DataFrame(a=Float64[], N1=Float64[])
+    threshold = 1e-2  # adjust as needed
+
+    for i in 1:(nrow(data)-1)
+        push!(current_branch, (a=data.a[i], N1=data.N1[i]))
+        if abs(data.N1[i+1] - data.N1[i]) > threshold
+            push!(branches, deepcopy(current_branch))
+            empty!(current_branch)
+        end
+    end
+    # Add the last point and branch
+    push!(current_branch, (a=data.a[end], N1=data.N1[end]))
+    push!(branches, current_branch)
+    # Remove branches with only two rows
+    branches = filter(df -> nrow(df) > 2, branches)
+    return branches
+end
 
 function flattenorbitdata(orbitdata)
     # Loop through the elements and plot the points
@@ -192,3 +360,15 @@ end
 function abpath()
     replace(@__DIR__, "src/julia" => "")
 end
+
+# function split_by_min_low2ndpar(df)
+#     min_low2ndpar = minimum(df.Low2ndpar)
+#     idx = findfirst(==(min_low2ndpar), df.Low2ndpar)
+#     a_split = df.a[idx]
+#     df_lower = @subset(df, :a .< a_split)
+#     df_upper = @subset(df, :a .>= a_split)
+#     return df_lower, df_upper, a_split, min_low2ndpar
+# end
+
+# df_lower, df_upper, a_split, min_low2ndpar = split_by_min_low2ndpar(hp_datatau1)
+

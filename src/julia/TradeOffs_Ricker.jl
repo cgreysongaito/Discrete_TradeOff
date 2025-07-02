@@ -581,74 +581,7 @@ let
     savefig(joinpath(abpath(), "figs/aorbitdiagram_RickerBevertonlowalphalowD.pdf"))
 end
 
-#Leslie matrix version of the Ricker model
-function adultsurvival(A, para)
-    @unpack α,β = para
-    return exp(-α-β*A)
-end
 
-function juvenilebirth(A, para)
-    @unpack D,C,a,b,K,p,τ = para
-    R = a-b*exp(-K*(τ+1))
-    return R*exp(-D-C*R*A)
-end
-
-function juvenilesurvival(J, para)
-    @unpack D,C = para
-    return exp(-D-C*J)
-end
-
-function adultdensity(A,para)
-    @unpack D, C = para
-    return exp(-D-C*A)
-end
-
-function LeslieMatrix(τval, para, AJvector)
-    local_par = deepcopy(para)
-    local_par.τ = τval
-    matrix = zeros(Float64,τval+1,τval+1)
-    matrix[1,1] = adultsurvival(AJvector[1], local_par)
-    matrix[2,1] = juvenilebirth(AJvector[1], local_par)
-    matrix[1,τval+1] = juvenilesurvival(AJvector[τval], local_par)
-    for i in 3:τval+1
-        matrix[i,i-1] = juvenilesurvival(AJvector[i-1], local_par)
-    end
-    return matrix
-end
-
-function model_Leslierecursion(τval, time, para, init, lesliematrix)
-    initvector = fill(init, τval+1)
-    AJvector = [Vector{Float64}() for _ in 1:time+1]
-    AJvector[1] = initvector
-    for t in 1:time
-        AJvector[t+1] = lesliematrix(τval, para, AJvector[t])*AJvector[t]
-    end
-    return AJvector
-end
-
-function first_elements(vec_of_vecs)
-    return [vec[1] for vec in vec_of_vecs]
-end
-
-let 
-    time = 5000
-    τval=12
-    timeseries = model_Leslierecursion(τval, time, RickerPar(τ=τval, a=30.0,α=0.1,β=0.3,D=0.1,C=2.0), 0.1, LeslieMatrix)
-    # plot(0:1:time,first_elements(timeseries))
-    return first_elements(timeseries)[1:1200]
-end
-
-
-calc_g(RickerPar(τ=1, a=25.0,α=1.5,β=2.0,D=0.5,C=0.15))
-
-function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematrix)
-    data = Vector{Vector{Float64}}(undef, length(τrange))
-    @threads for τi in eachindex(τrange)
-        timeseries = model_Leslierecursion(τrange[τi], time, para, init, lesliematrix)
-        data[τi] = first_elements(timeseries)[end-finalts:end]
-    end
-    return [τrange,data]
-end
 
 let 
     timeseries = model_recursion(0.1,5000,RickerPar(τ=0, a=100.0,α=1.5,β=2.0,D=0.5,C=0.15), RickerLeslie_τ0_model)
