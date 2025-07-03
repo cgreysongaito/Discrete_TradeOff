@@ -86,7 +86,6 @@ function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematr
     return [τrange,data]
 end
 
-#TODO switch out second alpha and beta for D and C
 #Parameters for the models
 @with_kw mutable struct BevHoltPar
     α::Float64 = 0.1 #death rate of mature? check!
