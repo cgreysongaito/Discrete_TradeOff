@@ -14,5 +14,5 @@ using DataFrames, DataFramesMeta
 using LaTeXStrings
 using Random
 using CSV
-default(fontfamily="Computer Modern", titlefont = 20, linewidth=3, legendfontsize = 10, guidefont = 18, tickfont = 12, framestyle = :zerolines, grid=false)
+default(fontfamily="Computer Modern", titlefont = 20, linewidth=3.5, legendfontsize = 12, guidefont = 18, tickfont = 12, framestyle = :zerolines, grid=false)
 
