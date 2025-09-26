@@ -8,11 +8,11 @@ let
     datap050=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.5)) for τval in 0:1:7]
     datap055=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.55)) for τval in 0:1:7]
     using Random
-    equifig = scatter(collect(0:1:7) .+ randn(8) .*0.05, datap040, label="\${\\overline{p}}=0.4\$",markersize=6, color="#440154FF")
+    equifig = scatter(collect(0:1:7) .+ randn(8) .*0.05, datap040, label="\${\\overline{p}}=0.4\$",markersize=6, color="#440154FF",yguidefontrotation=-90,left_margin=10mm,markerstrokewidth=0)
     plot!(collect(0:1:7), datap040, label="",linestyle=:dash, color="#440154FF")
-    scatter!(collect(0:1:7) .+ randn(8) .*0.05, datap050, label="\${\\overline{p}}=0.5\$",markersize=6, color="#238A8DFF")
+    scatter!(collect(0:1:7) .+ randn(8) .*0.05, datap050, label="\${\\overline{p}}=0.5\$",markersize=6, color="#238A8DFF",markerstrokewidth=0)
     plot!(collect(0:1:7), datap050, label="",linestyle=:dash, color="#238A8DFF")
-    scatter!(collect(0:1:7) .+ randn(8) .*0.05, datap055, label="\${\\overline{p}}=0.55\$",markersize=6, color="#FDE725FF")
+    scatter!(collect(0:1:7) .+ randn(8) .*0.05, datap055, label="\${\\overline{p}}=0.55\$",markersize=6, color="#FDE725FF",markerstrokewidth=0)
     plot!(collect(0:1:7), datap055, label="",linestyle=:dash, color="#FDE725FF")
     xlabel!("\$\\tau\$")
     ylabel!("N*(\$\\tau\$)")
@@ -114,9 +114,8 @@ let #Even tau
     xlabel!("a")
     ylabel!("N*(a)")
     ylims!(-0.9, 20.0)
-    yticks
     xlims!(0.0, 5.0)
-    plot!(legend=false, left_margin=10mm)
+    plot!(legend=false, left_margin=18mm)
     annotate!([-2.5],[19], ("a)", 18, "Computer Modern"))
     p2=plot(datatau2s.a, datatau2s.N1, color="#404788FF", label="\$\\tau\$=2.0")
     plot!(datatau2ua.a[20:end], datatau2ua.N1[20:end], color="#404788FF", linestyle=:dash, lw=1.5, label="")
@@ -135,7 +134,7 @@ let #Even tau
     xlabel!("a")
     ylims!(-0.9, 20.0)
     xlims!(10.0, 15.0)
-    plot!(yaxis=false, left_margin=-5mm)
+    plot!(yaxis=false,left_margin=-5mm)
     p3=plot(datatau6s.a, datatau6s.N1, color="#73D055FF", label="\$\\tau\$=6.0")
     plot!(datatau6ua.a[30:end], datatau6ua.N1[30:end], color="#73D055FF", linestyle=:dash, lw=1.5, label="")
     plot!(maxmindata6.a, maxmindata6.maximum, color="#73D055FF", linestyle=:dashdotdot,lw=2, label="")
@@ -154,8 +153,9 @@ let #Even tau
     xlabel!("N(t-\$\\tau\$)")
     ylabel!("N(t)")
     ylims!(-0.9,20)
+    xlims!(0,14)
     annotate!([-4],[19], ("b)", 18, "Computer Modern"))
-    plot!(legend=:bottomleft,left_margin=6mm)
+    plot!(legend=:bottomleft,left_margin=15mm)
     plot(p1, p2,p3,p4, layout = @layout([a{0.15w} b{0.35w} c{0.15w} d{0.3w}]), size = (1200, 400), bottom_margin=10mm)
     savefig(joinpath(abpath(), "figs/RickerConstanttaueven.svg"))
 end
@@ -182,7 +182,7 @@ let #tau=3 (odd)
     datatau3u0 = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :LineNum .== 2.0 .&& :N1 .< 0.001)
     datatau3ul0 = @subset(datatau3_filtered, :PointTypeName .== "Unstable" .&& :LineNum .== 1.0 .&& :N1 .< 0.001)
     #Time embedding prep
-        endtime = 1000000
+    endtime = 1000000
     finalts = 999000
     timeseriesp4 = model_recursion(0.1, endtime, RickerPar(τ=3, p=0.6, a=10.92, α=0.1, β=0.3, K=1.0, b=200), RickerConstant_model)
     dfp4 = DataFrame(time = 0:endtime, N = timeseriesp4)
@@ -224,7 +224,7 @@ let #tau=3 (odd)
     xlims!(tau3lowerbound, 6.0)
     ylims!(-1, 30.0)
     plot!([tau3lowerbound, tau3lowerbound], [-1, 30], color=:black, linestyle=:solid, lw=1.5, label="")
-    plot!(legend=false, left_margin=10mm)
+    plot!(legend=false, left_margin=18mm)
     annotate!([2.5],[29],("a)",18,"Computer Modern"))
     p2=plot(datatau3s1.a, datatau3s1.N1, color=:black, label="Stable")
     plot!(datatau3s2p2upper.a, datatau3s2p2upper.N1, color=:black, linestyle=:solid, label="")
@@ -267,13 +267,10 @@ let #tau=3 (odd)
     ylabel!("N(t)")
     ylims!(-1,30.0)
     annotate!([-7],[29],("b)",18,"Computer Modern"))
+    plot!(left_margin=15mm)
     plot(p1, p2,p3, layout = @layout([a{0.15w} b{0.55w} c{0.3w}]), size = (1200, 400), bottom_margin=10mm)
-    savefig(joinpath(abpath(), "figs/RickerConstanttau3.pdf"))
+    savefig(joinpath(abpath(), "figs/RickerConstanttau3.svg"))
 end
-
-datatau5 = cleanxppautdat_onepar("src/xppaut/RickerConstanttau5_a.dat")
-negN1_unstable_linenum = unique(@subset(datatau5, :N1 .< 0 .&& :PointTypeName .== "Unstable").LineNum)
-println("LineNum values where N1 < 0 and PointTypeName == \"Unstable\": ", negN1_unstable_linenum)
 
 let #tau=5 (odd)
     datatau5 = cleanxppautdat_onepar("src/xppaut/RickerConstanttau5_a.dat")
@@ -330,7 +327,7 @@ let #tau=5 (odd)
     xlims!(0.0, 6.0)
     xticks!([0, 2, 4, 6])
     ylims!(-1, 30.0)
-    plot!(legend=false, left_margin=10mm)
+    plot!(legend=false, left_margin=18mm)
     annotate!([-2.5],[29],("a)",18,"Computer Modern"))
     p2=plot(datatau5s1.a, datatau5s1.N1, color=:black, label="Stable")
     plot!(datatau5s2pupper.a, datatau5s2pupper.N1, color=:black, linestyle=:solid, label="")
@@ -357,9 +354,11 @@ let #tau=5 (odd)
     xlabel!("N(t-\$\\tau\$)")
     ylabel!("N(t)")
     ylims!(-1,30.0)
+    xlims!(0.0,20.0)
     annotate!([-5.],[29],("b)",18,"Computer Modern"))
+    plot!(left_margin=15mm)
     plot(p1, p2, p3, layout = @layout([a{0.15w} b{0.55w} c{0.3w}]), size = (1200, 400), bottom_margin=10mm)
-    savefig(joinpath(abpath(), "figs/RickerConstanttau5.pdf"))
+    savefig(joinpath(abpath(), "figs/RickerConstanttau5.svg"))
 end
 
 let #2 parameter (a & p) bifurcation diagram of Ricker Constant 
@@ -398,7 +397,7 @@ let #2 parameter (a & p) bifurcation diagram of Ricker Constant
     xlabel!("a")
     ylabel!("\${\\overline{p}}\$")
     annotate!([-5],[0.99],("a)", 18, "Computer Modern"))
-    plot!(legend=:outerleft)
+    plot!(legend=:outerright,left_margin=10mm)
 
     plot!(size = (800, 400),bottom_margin=5mm)
     savefig(joinpath(abpath(), "figs/RickerConstant_apbifurcation.svg"))
@@ -418,7 +417,7 @@ let
     xticks!([0, 2, 4, 6, 8])
     xlims!(0.0, 8.5)
     annotate!([-3],[3.9],("b)", 18, "Computer Modern"))
-    plot!(top_margin=5mm)
+    plot!(top_margin=5mm,yguidefontrotation=0)
 
     p2 = scatter(RCorbitdata2[1], RCorbitdata2[2], color=:black, ms=4, label="")
     scatter!([1.0], [0.0], color=:black, ms=4,label="")
@@ -456,6 +455,8 @@ let
     xlabel!("\$\\tau\$")
     ylabel!("N*(\$\\tau\$)")
     ylims!(0,1.5)
+    annotate!([-4],[1.45],("a)", 18, "Computer Modern"))
+    plot!(left_margin=10mm)
     p2=scatter(τrange .+ randn(length(τrange)) .* 0.05, Dval01data, color="#FDE725FF",markersize=6,markerstrokewidth=0, label="D=0.1")
     plot!(collect(1:1:15), Dval01data, label="",linestyle=:dash, color="#FDE725FF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, Dval03data, color="#238A8DFF", markersize=6,markerstrokewidth=0,label="D=0.3")
@@ -465,6 +466,8 @@ let
     xlabel!("\$\\tau\$")
     ylabel!("N*(\$\\tau\$)")
     ylims!(0,1.5)
+    annotate!([-4],[1.45],("b)", 18, "Computer Modern"))
+    plot!(left_margin=10mm)
     p3=scatter(τrange .+ randn(length(τrange)) .* 0.05, βval01data, color="#FDE725FF",markersize=6,markerstrokewidth=0, label="β=0.1")
     plot!(collect(1:1:15), βval01data, label="",linestyle=:dash, color="#FDE725FF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, βval03data, color="#238A8DFF", markersize=6,markerstrokewidth=0,label="β=0.3")
@@ -474,6 +477,8 @@ let
     xlabel!("\$\\tau\$")
     ylabel!("N*(\$\\tau\$)")
     ylims!(0,1.5)
+    annotate!([-4],[1.45],("c)", 18, "Computer Modern"))
+    plot!(left_margin=10mm)
     p4=scatter(τrange .+ randn(length(τrange)) .* 0.05, αval01data, color="#FDE725FF",markersize=6,markerstrokewidth=0, label="α=0.1")
     plot!(collect(1:1:15), αval01data, label="",linestyle=:dash, color="#FDE725FF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, αval03data, color="#238A8DFF", markersize=6,markerstrokewidth=0,label="α=0.3")
@@ -483,8 +488,10 @@ let
     xlabel!("\$\\tau\$")
     ylabel!("N*(\$\\tau\$)")
     ylims!(0,1.5)
+    annotate!([-4],[1.45],("d)", 18, "Computer Modern"))
+    plot!(left_margin=10mm)
     plot(p1, p2,p3,p4, layout=(2,2), size=(800,800), legend=:topright)
-    savefig(joinpath(abpath(), "figs/BevHoltBevHolt_tauequi.pdf"))
+    savefig(joinpath(abpath(), "figs/BevHoltBevHolt_tauequi.svg"))
 end
 
 
@@ -667,6 +674,87 @@ let
     xticks!([0, 2, 4, 6, 8])
     plot!(size=(350, 300))
     savefig(joinpath(abpath(), "figs/RickerConstant_tauorbitb.pdf"))
+end
+
+#Ricker Constant
+#show that all initial conditions go to interior equilibrium (i.e. conjecture that interior equilibrium is global asymptotic stable)
+
+let 
+    par_stablea = RickerPar(a=13.0, p=0.35, τ=3.0, α=0.1, β=0.3, b=200, K=1.0)
+    ma=calc_m(par_stablea)
+    low=1-exp(-par_stablea.α)
+    high=1-exp(-par_stablea.α-2)
+    print("m: $ma, Low: $low, High: $high \n")
+    equi_stablea=(-log(1-calc_m(par_stablea))-par_stablea.α)/par_stablea.β
+    timeseries_stable1a = model_recursion(1.5, 200, par_stablea, RickerConstant_model)
+    timeseries_stable2a = model_recursion(0.75, 200, par_stablea, RickerConstant_model)
+    timeseries_stable3a = model_recursion(0.05, 200, par_stablea, RickerConstant_model)
+    timeseries_stable4a = model_recursion(0.5, 200, par_stablea, RickerConstant_model)
+    timeseries_stable5a = model_recursion(0.1, 200, par_stablea, RickerConstant_model)
+    timeseries_stable6a = model_recursion(0.01, 200, par_stablea, RickerConstant_model)
+
+    par_stableb = RickerPar(a=50.0, p=0.35, τ=3.0, α=0.1, β=0.3, b=200, K=1.0)
+    mb=calc_m(par_stableb)
+    low=1-exp(-par_stableb.α)
+    high=1-exp(-par_stableb.α-2)
+    print("m: $mb, Low: $low, High: $high \n")
+    equi_stableb=(-log(1-calc_m(par_stableb))-par_stableb.α)/par_stableb.β
+    timeseries_stable1b = model_recursion(7.0, 200, par_stableb, RickerConstant_model)
+    timeseries_stable2b = model_recursion(5.0, 200, par_stableb, RickerConstant_model)
+    timeseries_stable3b = model_recursion(4.0, 200, par_stableb, RickerConstant_model)
+    timeseries_stable4b = model_recursion(2.0, 200, par_stableb, RickerConstant_model)
+    timeseries_stable5b = model_recursion(1.0, 200, par_stableb, RickerConstant_model)
+    timeseries_stable6b = model_recursion(0.01, 200, par_stableb, RickerConstant_model)
+
+
+    p1=plot(timeseries_stable1a, color=:black, lw=2, label="", left_margin=8mm)
+    plot!(timeseries_stable2a, color=:black, lw=2, label="")
+    plot!(timeseries_stable3a, color=:black, lw=2, label="")
+    plot!(timeseries_stable4a, color=:black, lw=2, label="")
+    plot!(timeseries_stable5a, color=:black, lw=2, label="")
+    plot!(timeseries_stable6a, color=:black, lw=2, label="")
+    hline!([equi_stablea], lw=2,linestyle=:dash, color=:black, label="")
+    xlabel!("Time")
+    ylabel!("N")
+    annotate!([-55.0],[1.5],("a)", 18, "Computer Modern"))
+    p2=plot(timeseries_stable1b, color=:black, lw=2, label="", left_margin=8mm)
+    plot!(timeseries_stable2b, color=:black, lw=2, label="")
+    plot!(timeseries_stable3b, color=:black, lw=2, label="")
+    plot!(timeseries_stable4b, color=:black, lw=2, label="")
+    plot!(timeseries_stable5b, color=:black, lw=2, label="")
+    plot!(timeseries_stable6b, color=:black, lw=2, label="")
+    hline!([equi_stableb], lw=2,linestyle=:dash, color=:black, label="")
+    xlabel!("Time")
+    ylabel!("N")
+    annotate!([-50.0],[7.0],("b)", 18, "Computer Modern"))
+    plot(p1,p2,size=(800, 350),yguidefontrotation=-90, bottom_margin=4.5mm,framestyle = :box)
+    savefig(joinpath(abpath(), "figs/RickerConstant_stabletimeseries.pdf"))
+
+end
+
+let 
+    par_unstable = RickerPar(a=70.0, p=0.35, τ=3.0, α=0.1, β=0.3, b=200, K=1.0)
+    m=calc_m(par_unstable)
+    low=1-exp(-par_unstable.α)
+    high=1-exp(-par_unstable.α-2)
+    print("m:$m, Low: $low, High: $high \n")
+    equi_unstable=(-log(1-calc_m(par_unstable))-par_unstable.α)/par_unstable.β
+    timeseries_unstable1 = model_recursion(12.0, 1000, par_unstable, RickerConstant_model)
+    timeseries_unstable2 = model_recursion(22.0, 1000, par_unstable, RickerConstant_model)
+    p1=plot(timeseries_unstable1, color=:black, lw=2, label="",left_margin=8mm)
+    hline!([equi_unstable], lw=2,linestyle=:dash, color=:black, label="")
+    xlabel!("Time")
+    ylabel!("N")
+    annotate!([-200.0],[22.0],("a)", 18, "Computer Modern"))
+    p2=plot(timeseries_unstable2, color=:black, lw=2, label="",left_margin=5mm)
+    hline!([equi_unstable], lw=2,linestyle=:dash, color=:black, label="")
+    xlabel!("Time")
+    ylabel!("N")
+    annotate!([-200.0],[22.0],("b)", 18, "Computer Modern"))
+
+    plot(p1,p2,size=(800, 350),yguidefontrotation=-90, bottom_margin=4.5mm,framestyle = :box)
+    savefig(joinpath(abpath(), "figs/RickerConstant_unstabletimeseries.pdf"))
+
 end
 
 #Ricker Ricker
