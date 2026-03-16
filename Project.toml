@@ -1,9 +1,10 @@
 name = "TradeOffDelay"
 uuid = "761926dc-932a-427d-80f2-0462d0589c49"
-authors = ["Christopher J. Greyson-Gaito <christopher@greyson-gaito.com>"]
 version = "0.1.0"
+authors = ["Christopher J. Greyson-Gaito <christopher@greyson-gaito.com>"]
 
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 Calculus = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataFramesMeta = "1313f7d8-7da2-5740-9ea0-a2ca25f37964"
@@ -19,6 +20,7 @@ Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
 
 [compat]
+CSV = "0.10.15"
 Calculus = "0.5.2"
 DataFrames = "1.7.0"
 DataFramesMeta = "0.15.4"

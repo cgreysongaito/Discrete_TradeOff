@@ -360,14 +360,26 @@ function abpath()
     replace(@__DIR__, "src/julia" => "")
 end
 
-# function split_by_min_low2ndpar(df)
-#     min_low2ndpar = minimum(df.Low2ndpar)
-#     idx = findfirst(==(min_low2ndpar), df.Low2ndpar)
-#     a_split = df.a[idx]
-#     df_lower = @subset(df, :a .< a_split)
-#     df_upper = @subset(df, :a .>= a_split)
-#     return df_lower, df_upper, a_split, min_low2ndpar
-# end
+#Calculate max and min for Neimark-Sacker
+function maxminNS(τval, arange, time, trans)
+    maxdata=zeros(length(arange))
+    mindata=zeros(length(arange))
+    @threads for ai in eachindex(arange)
+        timeseries = model_recursion(0.1, time, RickerPar(τ=τval, a=arange[ai], p=0.6, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_model)[trans:end]
+        maxdata[ai] = maximum(timeseries)
+        mindata[ai] = minimum(timeseries)
+    end
+    return arange, maxdata, mindata
+end
 
-# df_lower, df_upper, a_split, min_low2ndpar = split_by_min_low2ndpar(hp_datatau1)
-
+function findRCvalue(data, aval, stable)
+    if stable=="stable"
+        return @subset(data, isapprox.(:a, aval; rtol=1e-4)).N1[1]
+    elseif stable=="unstable"
+        return @subset(data, isapprox.(:a, aval; rtol=1e-4)).N1[1]
+    elseif stable=="max"
+        return @subset(data, isapprox.(:a, aval; rtol=1e-4)).maximum[1]
+    else
+        error("Invalid stable type. Use 'stable', 'unstable', or 'max'.")
+    end
+end

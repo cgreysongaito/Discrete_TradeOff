@@ -1,7 +1,7 @@
 include("packages.jl")
 include("TradeOffs_CommonCode.jl")
 
-#BevertonHoltConstant
+## Section 3.1
 #Figure 1
 let 
     datap040=[BevHoltI_equi(BevHoltPar(τ=τval,p=0.4)) for τval in 0:1:7]
@@ -19,19 +19,7 @@ let
     savefig(joinpath(abpath(), "figs/BevHoltI_equi.pdf"))
 end
 
-#RickerConstant
-#Calculate max and min for Neimark-Sacker
-function maxminNS(τval, arange, time, trans)
-    maxdata=zeros(length(arange))
-    mindata=zeros(length(arange))
-    @threads for ai in eachindex(arange)
-        timeseries = model_recursion(0.1, time, RickerPar(τ=τval, a=arange[ai], p=0.6, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_model)[trans:end]
-        maxdata[ai] = maximum(timeseries)
-        mindata[ai] = minimum(timeseries)
-    end
-    return arange, maxdata, mindata
-end
-
+## Section 3.2
 let #create max min N-S data for even tau Ricker constant
     ahigh2=ahigherconstraint(RickerPar(p=0.6, τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
     maxmin2=maxminNS(2.0, 14.385:0.001:ahigh2-0.01, 1000000, 999000)
@@ -50,18 +38,7 @@ let #create max min N-S data for even tau Ricker constant
     CSV.write("data/maxmin6.csv", df_maxmin6)
 end
 
-function findRCvalue(data, aval, stable)
-    if stable=="stable"
-        return @subset(data, isapprox.(:a, aval; rtol=1e-4)).N1[1]
-    elseif stable=="unstable"
-        return @subset(data, isapprox.(:a, aval; rtol=1e-4)).N1[1]
-    elseif stable=="max"
-        return @subset(data, isapprox.(:a, aval; rtol=1e-4)).maximum[1]
-    else
-        error("Invalid stable type. Use 'stable', 'unstable', or 'max'.")
-    end
-end
-
+#Figure 2
 let #Even tau
     datatau2 = cleanxppautdat_onepar("src/xppaut/RickerConstanttau2_a.dat")
     tau2lowerbound = alowerconstraint(RickerPar(p=0.6, τ=2.0, α=0.1, β=0.3, b=200, K=1.0))
@@ -160,6 +137,7 @@ let #Even tau
     savefig(joinpath(abpath(), "figs/RickerConstanttaueven.svg"))
 end
 
+#Figure 3
 let #tau=3 (odd)
     datatau3 = cleanxppautdat_onepar("src/xppaut/RickerConstanttau3_a.dat")
     tau3lowerbound = alowerconstraint(RickerPar(p=0.6, τ=3.0, α=0.1, β=0.3, b=200, K=1.0))
@@ -253,10 +231,10 @@ let #tau=3 (odd)
     scatter!([10.92],[-0.5],color=:black,marker=:star5,ms=8,label="")
     scatter!([11.04],[-0.5],color=:black,ms=5,label="")
     plot!(yaxis=false, left_margin=-5mm)
-    p3=scatter(df1.N, df1.N_1, color="#FDE725FF", label="1", ms=2.5,markerstrokewidth=0)
-    scatter!(df2.N, df2.N_1, color="#73D055FF", label="2", ms=2.5,markerstrokewidth=0)
-    scatter!(df3.N, df3.N_1, color="#238A8DFF", label="3", ms=2.5,markerstrokewidth=0)
-    scatter!(df4.N, df4.N_1, color="#440154FF", label="4", ms=2.5,markerstrokewidth=0)
+    p3=scatter(df1.N, df1.N_1, color="#FDE725FF", label="N(4t)", ms=2.5,markerstrokewidth=0)
+    scatter!(df2.N, df2.N_1, color="#73D055FF", label="N(4t+1)", ms=2.5,markerstrokewidth=0)
+    scatter!(df3.N, df3.N_1, color="#238A8DFF", label="N(4t+2)", ms=2.5,markerstrokewidth=0)
+    scatter!(df4.N, df4.N_1, color="#440154FF", label="N(4t+3)", ms=2.5,markerstrokewidth=0)
     scatter!(df1p4.N, df1p4.N_1, color="#FDE725FF", label="", ms=8, marker=:star5,markerstrokewidth=0)
     scatter!(df2p4.N, df2p4.N_1, color="#73D055FF", label="", ms=8, marker=:star5,markerstrokewidth=0)
     scatter!(df3p4.N, df3p4.N_1, color="#238A8DFF", label="", ms=8, marker=:star5,markerstrokewidth=0)
@@ -272,6 +250,7 @@ let #tau=3 (odd)
     savefig(joinpath(abpath(), "figs/RickerConstanttau3.svg"))
 end
 
+# Figure 4
 let #tau=5 (odd)
     datatau5 = cleanxppautdat_onepar("src/xppaut/RickerConstanttau5_a.dat")
     tau5lowerbound = alowerconstraint(RickerPar(p=0.6, τ=5.0, α=0.1, β=0.3, b=200, K=1.0))
@@ -345,8 +324,8 @@ let #tau=5 (odd)
     xlims!(18.0, tau5upperbound + 0.1)
     ylims!(-1, 30.0)
     plot!(yaxis=false, left_margin=-5mm)
-    p3=scatter(df1.N, df1.N_1, color="#FDE725FF", label="1", ms=2.5,markerstrokewidth=0)
-    scatter!(df2.N, df2.N_1, color="#73D055FF", label="2", ms=2.5,markerstrokewidth=0)
+    p3=scatter(df1.N, df1.N_1, color="#FDE725FF", label="N(2t)", ms=2.5,markerstrokewidth=0)
+    scatter!(df2.N, df2.N_1, color="#73D055FF", label="N(2t+1)", ms=2.5,markerstrokewidth=0)
     scatter!(df1p2.N, df1p2.N_1, color="#FDE725FF", label="", ms=8, marker=:star5,markerstrokewidth=0)
     scatter!(df2p2.N, df2p2.N_1, color="#73D055FF", label="", ms=8, marker=:star5,markerstrokewidth=0)
     scatter!([NaN], [NaN], colour=:black,marker=:star5, label="Period Two")
@@ -361,7 +340,8 @@ let #tau=5 (odd)
     savefig(joinpath(abpath(), "figs/RickerConstanttau5.svg"))
 end
 
-let #2 parameter (a & p) bifurcation diagram of Ricker Constant 
+#Figure 5
+let #a) panel. 2 parameter (a & p) bifurcation diagram of Ricker Constant 
     datatau1 = cleanxppautdat_twopar("src/xppaut/RickerConstanttau1.dat")
     bp_datatau1 = unique(@subset(datatau1, :PointTypeName .== "BP"), :Low2ndpar)
     hp_datatau1 = unique(@subset(datatau1, :PointTypeName .== "HP"), :Low2ndpar)
@@ -403,8 +383,7 @@ let #2 parameter (a & p) bifurcation diagram of Ricker Constant
     savefig(joinpath(abpath(), "figs/RickerConstant_apbifurcation.svg"))
 end
 
-let 
-    #Orbit diagrams prep
+let #b) and c) panels
     par1 = RickerPar(a=13.0, p=0.57205, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)
     RCorbitdata1 = flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par1, 50; optτ=2, upperval=8))
     par2 = RickerPar(a=13.0, p=0.35, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)
@@ -431,9 +410,10 @@ let
 
 end
 
-#BevertonHoltBevertonHolt model
+## Section 4.1
+#Figure 6
 let 
-    τrange = 1:1:15
+    τrange = 0:1:15
     Cval01data=NdataBHBH("C", τrange, 0.1, BevHoltPar(α=0.3,β=0.3,D=0.3,a=5.0,b=200.0,K=1.0))
     Cval03data=NdataBHBH("C", τrange, 0.3, BevHoltPar(α=0.3,β=0.3,D=0.3,a=5.0,b=200.0,K=1.0))
     Cval06data=NdataBHBH("C", τrange, 0.6, BevHoltPar(α=0.3,β=0.3,D=0.3,a=5.0,b=200.0,K=1.0))
@@ -447,44 +427,44 @@ let
     αval03data=NdataBHBH("α", τrange, 0.3, BevHoltPar(C=0.3,D=0.3,β=0.3,a=5.0,b=200.0,K=1.0))
     αval06data=NdataBHBH("α", τrange, 0.6, BevHoltPar(C=0.3,D=0.3,β=0.3,a=5.0,b=200.0,K=1.0))
     p1=scatter(τrange .+ randn(length(τrange)) .* 0.05, Cval01data, color="#FDE725FF",markersize=6,markerstrokewidth=0,label="C=0.1")
-    plot!(collect(1:1:15), Cval01data, label="",linestyle=:dash, color="#FDE725FF")
+    plot!(collect(0:1:15), Cval01data, label="",linestyle=:dash, color="#FDE725FF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, Cval03data, color="#238A8DFF", markersize=6,markerstrokewidth=0,label="C=0.3")
-    plot!(collect(1:1:15), Cval03data, label="",linestyle=:dash, color="#238A8DFF")
+    plot!(collect(0:1:15), Cval03data, label="",linestyle=:dash, color="#238A8DFF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, Cval06data, color="#440154FF", markersize=6,markerstrokewidth=0,label="C=0.6")
-    plot!(collect(1:1:15), Cval06data, label="",linestyle=:dash, color="#440154FF")
+    plot!(collect(0:1:15), Cval06data, label="",linestyle=:dash, color="#440154FF")
     xlabel!("\$\\tau\$")
     ylabel!("N*(\$\\tau\$)")
     ylims!(0,1.5)
     annotate!([-4],[1.45],("a)", 18, "Computer Modern"))
     plot!(left_margin=10mm)
     p2=scatter(τrange .+ randn(length(τrange)) .* 0.05, Dval01data, color="#FDE725FF",markersize=6,markerstrokewidth=0, label="D=0.1")
-    plot!(collect(1:1:15), Dval01data, label="",linestyle=:dash, color="#FDE725FF")
+    plot!(collect(0:1:15), Dval01data, label="",linestyle=:dash, color="#FDE725FF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, Dval03data, color="#238A8DFF", markersize=6,markerstrokewidth=0,label="D=0.3")
-    plot!(collect(1:1:15), Dval03data, label="",linestyle=:dash, color="#238A8DFF")
+    plot!(collect(0:1:15), Dval03data, label="",linestyle=:dash, color="#238A8DFF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, Dval06data, color="#440154FF", markersize=6,markerstrokewidth=0,label="D=0.6")
-    plot!(collect(1:1:15), Dval06data, label="",linestyle=:dash, color="#440154FF")
+    plot!(collect(0:1:15), Dval06data, label="",linestyle=:dash, color="#440154FF")
     xlabel!("\$\\tau\$")
     ylabel!("N*(\$\\tau\$)")
     ylims!(0,1.5)
     annotate!([-4],[1.45],("b)", 18, "Computer Modern"))
     plot!(left_margin=10mm)
     p3=scatter(τrange .+ randn(length(τrange)) .* 0.05, βval01data, color="#FDE725FF",markersize=6,markerstrokewidth=0, label="β=0.1")
-    plot!(collect(1:1:15), βval01data, label="",linestyle=:dash, color="#FDE725FF")
+    plot!(collect(0:1:15), βval01data, label="",linestyle=:dash, color="#FDE725FF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, βval03data, color="#238A8DFF", markersize=6,markerstrokewidth=0,label="β=0.3")
-    plot!(collect(1:1:15), βval03data, label="",linestyle=:dash, color="#238A8DFF")
+    plot!(collect(0:1:15), βval03data, label="",linestyle=:dash, color="#238A8DFF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, βval06data, color="#440154FF", markersize=6,markerstrokewidth=0,label="β=0.6")
-    plot!(collect(1:1:15), βval06data, label="",linestyle=:dash, color="#440154FF")
+    plot!(collect(0:1:15), βval06data, label="",linestyle=:dash, color="#440154FF")
     xlabel!("\$\\tau\$")
     ylabel!("N*(\$\\tau\$)")
     ylims!(0,1.5)
     annotate!([-4],[1.45],("c)", 18, "Computer Modern"))
     plot!(left_margin=10mm)
     p4=scatter(τrange .+ randn(length(τrange)) .* 0.05, αval01data, color="#FDE725FF",markersize=6,markerstrokewidth=0, label="α=0.1")
-    plot!(collect(1:1:15), αval01data, label="",linestyle=:dash, color="#FDE725FF")
+    plot!(collect(0:1:15), αval01data, label="",linestyle=:dash, color="#FDE725FF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, αval03data, color="#238A8DFF", markersize=6,markerstrokewidth=0,label="α=0.3")
-    plot!(collect(1:1:15), αval03data, label="",linestyle=:dash, color="#238A8DFF")
+    plot!(collect(0:1:15), αval03data, label="",linestyle=:dash, color="#238A8DFF")
     scatter!(τrange .+ randn(length(τrange)) .* 0.05, αval06data, color="#440154FF", markersize=6,markerstrokewidth=0,label="α=0.6")
-    plot!(collect(1:1:15), αval06data, label="",linestyle=:dash, color="#440154FF")
+    plot!(collect(0:1:15), αval06data, label="",linestyle=:dash, color="#440154FF")
     xlabel!("\$\\tau\$")
     ylabel!("N*(\$\\tau\$)")
     ylims!(0,1.5)
@@ -495,9 +475,9 @@ let
 end
 
 
-#RickerRicker
-#a and C/β two par bifurcation figure
-let
+## Section 4.2
+# Figure 7
+let #a) and b) panels. a and C/β two par bifurcation figure
     datatau1C = cleanxppautdat_twopar("src/xppaut/RickerRickertau1_C.dat")
     bp_datatau1C = unique(@subset(datatau1C, :PointTypeName .== "BP"), :Low2ndpar)
     hp_datatau1C = unique(@subset(datatau1C, :PointTypeName .== "HP"), :Low2ndpar)
@@ -586,8 +566,7 @@ let
     savefig(joinpath(abpath(), "figs/aCbetabifurcation_RickerRicker.svg"))
 end
 
-#Tau orbit for a and C comparison (RickerRicker)
-let 
+let #c), d), e), f), g) panels. Tau orbit for a and C comparison (RickerRicker)
     τrange = 1:1:35
     par1 = RickerPar(a=26.5,C=0.5, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)
     RLorbitdata1 = flattenorbitdata(LeslieMatrixOrbitDiagram(τrange, 50000, 50, par1, 0.1, LeslieMatrix))
@@ -636,49 +615,11 @@ end
 
 
 
-#Appendix
+#### Appendix
 
-#Tau create and then kill oscillations
-let 
-    par = RickerPar(a=13.0, p=0.57205, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)
-    RCorbitdata = flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par, 50; optτ=2, upperval=8))
-    RCorbitdata_wofec = flattenorbitdata(orbitdiagrams(RickerConstant_wofec_model, "τ", par, 50; optτ=2, upperval=8))
-    timeseries = model_recursion(10.0, 1000000, RickerPar(a=13.0, p=0.57205, τ=1.0, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_wofec_model; optτ=2)
-    dataN = timeseries[end-50:end]
-    p2 = scatter(RCorbitdata[1], log10.(RCorbitdata[2] .+1), color=:black, ms=8,label="With fecundity\nbenefit")
-    scatter!(RCorbitdata_wofec[1], log10.(RCorbitdata_wofec[2] .+1), color=:blue, ms=5, markerstrokecolor=:blue, label="Without fecundity\nbenefit")
-    scatter!([1.0], [0.0], color=:black, ms=8, label="")
-    scatter!(repeat([1],51), log10.(dataN .+1), color=:blue, ms=5, markerstrokecolor=:blue, label="")
-    xlabel!("τ")
-    ylabel!("log10(N+1)")
-    xticks!([0, 2, 4, 6, 8])
-    xlims!(0.0, 8.5)
-    plot!(size=(350, 300))
-    savefig(joinpath(abpath(), "figs/RickerConstant_tauorbita.pdf"))
-end
-
-#Tau allows equilibrium to exist and then kills stable point
-let
-    par = RickerPar(a=13.0, p=0.35, τ=2.0, α=0.1, β=0.3, b=200, K=1.0)
-    RCorbitdata = flattenorbitdata(orbitdiagrams(RickerConstant_model, "τ", par, 50; upperval=8))
-    RCorbitdata_wofec = flattenorbitdata(orbitdiagrams(RickerConstant_wofec_model, "τ", par, 50; optτ=2, upperval=8))
-    timeseries = model_recursion(10.0, 1000000, RickerPar(a=13.0, p=0.35, τ=1.0, α=0.1, β=0.3, b=200, K=1.0), RickerConstant_wofec_model; optτ=2)
-    dataN = timeseries[end-50:end]
-    p2 = scatter(RCorbitdata[1], RCorbitdata[2], color=:black, ms=8, label="With fecundity\nbenefit")
-    scatter!(RCorbitdata_wofec[1], log10.(RCorbitdata_wofec[2] .+1), color=:blue, ms=5, markerstrokecolor=:blue, label="Without fecundity\nbenefit")
-    scatter!([1.0], [0.0], color=:black, ms=8,label="")
-    scatter!(repeat([1],51), log10.(dataN .+1), color=:blue, ms=5, markerstrokecolor=:blue, label="")
-    xlabel!("τ")
-    ylabel!("N")
-    xlims!(0.0, 8.5)
-    xticks!([0, 2, 4, 6, 8])
-    plot!(size=(350, 300))
-    savefig(joinpath(abpath(), "figs/RickerConstant_tauorbitb.pdf"))
-end
-
-#Ricker Constant
+## Appendix I
 #show that all initial conditions go to interior equilibrium (i.e. conjecture that interior equilibrium is global asymptotic stable)
-
+#Figure 8
 let 
     par_stablea = RickerPar(a=13.0, p=0.35, τ=3.0, α=0.1, β=0.3, b=200, K=1.0)
     ma=calc_m(par_stablea)
@@ -729,9 +670,9 @@ let
     annotate!([-50.0],[7.0],("b)", 18, "Computer Modern"))
     plot(p1,p2,size=(800, 350),yguidefontrotation=-90, bottom_margin=4.5mm,framestyle = :box)
     savefig(joinpath(abpath(), "figs/RickerConstant_stabletimeseries.pdf"))
-
 end
 
+#Figure 9
 let 
     par_unstable = RickerPar(a=70.0, p=0.35, τ=3.0, α=0.1, β=0.3, b=200, K=1.0)
     m=calc_m(par_unstable)
@@ -751,14 +692,13 @@ let
     xlabel!("Time")
     ylabel!("N")
     annotate!([-200.0],[22.0],("b)", 18, "Computer Modern"))
-
     plot(p1,p2,size=(800, 350),yguidefontrotation=-90, bottom_margin=4.5mm,framestyle = :box)
     savefig(joinpath(abpath(), "figs/RickerConstant_unstabletimeseries.pdf"))
-
 end
 
-#Ricker Ricker
+## Appendix P
 #Tau orbit when decreasing C and beta at same time
+#Figure 10
 let 
     τrange = 1:1:35
     par1 = RickerPar(a=26.5,C=0.5, τ=2.0, α=0.1, β=0.5, b=200, K=1.0)
@@ -771,17 +711,14 @@ let
     xlabel!("\$\\tau\$")
     ylabel!("N")
     xlims!(0.0, 35.5)
-    # ylims!(0.0, 2.3)
     p2 = scatter(RLorbitdata2[1], RLorbitdata2[2], color=:black, ms=5,label="")
     xlabel!("\$\\tau\$")
     ylabel!("N")
     xlims!(0.0, 35.5)
-    #  ylims!(0.0, 2.3)
     p3= scatter(RLorbitdata3[1], RLorbitdata3[2], color=:black, ms=5,label="")
     xlabel!("\$\\tau\$")
     ylabel!("N")
     xlims!(0.0, 35.5)
-    #  ylims!(0.0, 2.3)
     plot(p1, p2, p3, size=(450, 600), layout=(3, 1), legend=:none, left_margin=6mm)
     savefig(joinpath(abpath(), "figs/RickerRicker_Cequalbeta_tauorbit.pdf"))
 end
