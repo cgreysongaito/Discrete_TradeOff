@@ -1,5 +1,5 @@
 #RickerRicker Model
-#bifurcation diag 
+#bifurcation diagram
 #tau = 1
 x(t+1)=(x * exp(-alpha-beta*x)) + exp(-D-C*y)*y
 y(t+1)= (a-b*exp(-K*(tau+1))) * exp(-D-C*(a-b*exp(-K*(tau+1)))*x)*x
@@ -10,17 +10,10 @@ y(0)=10.0
 
 #a bifurcation
 #par a=30.0, D=0.1, tau=1.0, alpha=0.1, beta=0.3, b=200, K=1.0, C=0.1
-#K bifurcation
-#par K=1.0, a=30.0, D=0.1, tau=1.0, alpha=0.1, beta=0.3, b=200, C=0.1
-#b bifurcation - when a=5.0 b<273
-#par b=200, K=1.0, a=30.0, D=0.1, tau=1.0, alpha=0.1, beta=0.3, C=0.1
 #C bifurcation 
 #par a=30.0, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, alpha=0.1, beta=0.1
-#alpha bifurcation
-#par a=30.0, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=1.0, beta=0.3
 #beta bifurcation
 par a=30.0, beta=2.0, alpha=0.1, C=0.3, D=0.1, b=200, K=1.0, tau=1.0, 
-
 
 @ total=10000,method=discrete,nout=1
 @ maxstor 10000000 
@@ -30,13 +23,7 @@ par a=30.0, beta=2.0, alpha=0.1, C=0.3, D=0.1, b=200, K=1.0, tau=1.0,
 #a bifurcation
 #@ autoxmin=0.0,autoxmax=70.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=70.0 
 
-#K bifurcation
-#@ autoxmin=0.0,autoxmax=30.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=30.0 
-
-#b bifurcation
-#@ autoxmin=0.0,autoxmax=273.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=273.0 
-
-#alpha, beta, C bifurcation
+#beta, C bifurcation
 @ autoxmin=0.0,autoxmax=200.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=200.0 
 
 done

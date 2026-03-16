@@ -29,8 +29,7 @@ i(0)=0.5
 j(0)=0.5
 l(0)=0.5
 
-#Can't do tau bifurcation so do a and p bifurcations
-#a bifurction
+#a bifurcation
 par a=30.0, p=0.6, tau=8.0, alpha=0.1, beta=0.3, b=200, K=1.0
 
 @ total=5000,method=discrete,nout=1

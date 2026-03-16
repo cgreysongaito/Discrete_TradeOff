@@ -20,16 +20,10 @@ w(0)=10.0
 u(0)=10.0
 v(0)=10.0
 
-#a bifurction
+#a bifurcation
 #par a=5.0, D=0.1, tau=5.0, alpha=0.1, beta=0.3, b=200, K=1.0, C=0.1
-#K bifurcation
-#par K=1.0, a=5.0, D=0.1, tau=5.0, alpha=0.1, beta=0.3, b=200, C=0.1
-#b bifurcation - when a=5.0 b<273
-#par b=200, K=1.0, a=25.0, D=0.1, tau=5.0, alpha=0.1, beta=0.3, C=0.1
 #C bifurcation 
 #par a=5.0, C=0.1, D=0.1, b=200, K=1.0, tau=5.0, alpha=0.1, beta=0.3
-#alpha bifurcation
-#par a=5.0, alpha=0.1, C=0.1, D=0.1, b=200, K=1.0, tau=5.0, beta=0.3
 #beta bifurcation
 par a=5.0, beta=3.0, alpha=0.1, C=0.3, D=0.1, b=200, K=1.0, tau=5.0
 
@@ -42,13 +36,7 @@ par a=5.0, beta=3.0, alpha=0.1, C=0.3, D=0.1, b=200, K=1.0, tau=5.0
 #a bifurcation
 #@ autoxmin=0.0,autoxmax=70.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=70.0 
 
-#K bifurcation
-#@ autoxmin=0.0,autoxmax=30.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=30.0 
-
-#b bifurcation
-#@ autoxmin=0.0,autoxmax=273.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=273.0 
-
-#alpha, beta, C bifurcation
+#beta, C bifurcation
 @ autoxmin=0.0,autoxmax=70.0,autoymin=-0.5,autoymax=15.0, parmin=0.0,parmax=70.0 
 
 done

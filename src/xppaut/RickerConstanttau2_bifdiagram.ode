@@ -11,17 +11,11 @@ x(0)=0.5
 y(0)=0.5
 z(0)=0.5
 
-#When tau=2,p=0.6 boundaries of a are 10.0, 14.5
-
-#Can't do tau bifurcation so do a and p bifurcations
-#a bifurction
+#a bifurcation
 par a=13.0, p=0.6, tau=2.0, alpha=0.1, beta=0.3, b=200, K=1.0
-
-
 
 @ total=5000,method=discrete,nout=1
 @ autoxmin=0.0,autoxmax=40.0,autoymin=-0.5,autoymax=15.0
-#a bifurcation
 @ dsmax=0.05,dsmin=.00001,parmin=0.0,parmax=40.0, ds=0.02, nmax=700, npr=40
 
 @ maxstor 10000000 

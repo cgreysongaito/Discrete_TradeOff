@@ -20,10 +20,7 @@ w(0)=0.5
 v(0)=0.5
 h(0)=0.5
 
-#When tau=5,p=0.6 boundaries of a are 0.5, 21.9
-
-#Can't do tau bifurcation so do a and p bifurcations
-#a bifurction
+#a bifurcation
 par a=6.0, p=0.6, tau=5.0, alpha=0.1, beta=0.3, b=200, K=1.0
 
 @ total=5000,method=discrete,nout=8
