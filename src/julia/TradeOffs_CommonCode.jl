@@ -1,31 +1,37 @@
-#Models
-function BevertonHolt_model(Ndata, t, para)
-    @unpack α,β,a,b,K,p,τ = para
-        return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (a-b*exp(-K*(τ+1)))*(p^(τ+1))*Ndata[t-τ]
+### Required functions to build figures in:
+# "Adding a fecundity-survival trade-off to a discrete population model with maturation delay"
+# by Christopher Greyson-Gaito, Sabrina H. Streipert, Gail S.K. Wolkowicz
+
+## Parameters for the models (default)
+@with_kw mutable struct BevHoltPar
+    α::Float64 = 0.1
+    β::Float64 = 0.3
+    a::Float64 = 10
+    b::Float64 = 200
+    K::Float64 = 1.0
+    p::Float64 = 0.4
+    D::Float64 = 0.1
+    C::Float64 = 0.1
+    τ::Int64 = 5
 end
 
-function BevertonHolt_modelII(Ndata, t, para; optτ::Int64=0)
-    @unpack α,β,a,b,K,p,D,C,τ = para
-    g=calc_g(para)
-    return (Ndata[t]  / (1 + α + β* Ndata[t] )) + (D*g*Ndata[t-τ])/((D*(1+D)^(τ+1))+((((1+D)^(τ+1))-1)*C*g*Ndata[t-τ]))
+@with_kw mutable struct RickerPar
+    α::Float64 = 0.1
+    β::Float64 = 0.3
+    a::Float64 = 10.0
+    b::Float64 = 200.0
+    K::Float64 = 1.0
+    p::Float64 = 0.4
+    D::Float64 = 0.1
+    C::Float64 = 0.1
+    τ::Int64 = 5
 end
 
+## Model set up (for Ricker versions)
 function RickerConstant_model(Ndata, t, para; optτ::Int64=0)
     @unpack α,β,a,b,K,p,τ = para
     g=a-b*exp(-K*(τ+1))
         return (Ndata[t] * exp(-α-β*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
-end
-
-function RickerConstant_wofec_model(Ndata, t, para; optτ::Int64=0)
-    @unpack α,β,a,b,K,p,τ = para
-    g=a-b*exp(-K*(optτ+1))
-        return (Ndata[t] * exp(-α-β*Ndata[t])) + g*(p^(τ+1))*Ndata[t-τ]
-end
-
-function RickerLeslie_τ0_model(Ndata, t, para)
-    @unpack α,β,a,b,K,p,τ = para
-    g=a-b*exp(-K*(τ+1))
-        return (Ndata[t] * exp(-α-β*Ndata[t])) + g*exp(-α-β*g*Ndata[t])*Ndata[t]
 end
 
 #Leslie matrix version of the Ricker model
@@ -43,11 +49,6 @@ end
 function juvenilesurvival(J, para)
     @unpack D,C = para
     return exp(-D-C*J)
-end
-
-function adultdensity(A,para)
-    @unpack D, C = para
-    return exp(-D-C*A)
 end
 
 function LeslieMatrix(τval, para, AJvector)
@@ -86,31 +87,6 @@ function LeslieMatrixOrbitDiagram(τrange, time, finalts, para, init, lesliematr
     return [τrange,data]
 end
 
-#Parameters for the models
-@with_kw mutable struct BevHoltPar
-    α::Float64 = 0.1 #death rate of mature? check!
-    β::Float64 = 0.3 #intraspecific competition rate of mature? check!
-    a::Float64 = 10
-    b::Float64 = 200
-    K::Float64 = 1.0
-    p::Float64 = 0.4
-    D::Float64 = 0.1 #death rate of immature? check!
-    C::Float64 = 0.1 #intraspecific competition rate of immature? check!
-    τ::Int64 = 5
-end
-
-@with_kw mutable struct RickerPar
-    α::Float64 = 0.1
-    β::Float64 = 0.3
-    a::Float64 = 10.0
-    b::Float64 = 200.0
-    K::Float64 = 1.0
-    p::Float64 = 0.4
-    D::Float64 = 0.1
-    C::Float64 = 0.1
-    τ::Int64 = 5
-end
-
 function calc_m(para)
     @unpack a,b,K,p,τ = para
     m = (a-b*exp(-K*(τ+1)))*(p^(τ+1))
@@ -138,7 +114,6 @@ function phigherconstraint(para)
     return (1/(a-b*exp(-K*(τ+1))))^(1/(τ+1))
 end
 
-
 function model_recursion(N0::Float64, time::Int64, para, model_func; optτ::Int64=0)
     if !isa(time, Int64)
         error("time variable needs to be Int64")
@@ -153,29 +128,6 @@ function model_recursion(N0::Float64, time::Int64, para, model_func; optτ::Int6
         append!(N, newN)
     end
     return N[τ+1:end]
-end
-
-function model_τbifurc(τrange, model_func, par::Union{BevHoltPar, RickerPar}, pval)
-    data = zeros(length(τrange))
-    @threads for i in eachindex(τrange)
-        local_par = deepcopy(par)
-        local_par.τ = τrange[i]
-        local_par.p = pval
-        timeseries = model_recursion(0.1, 500, local_par, model_func)
-        data[i] = timeseries[end-50]
-    end
-    return data
-end #using end value (#TODO code max 0 or equilibrium point for changing tau)
-
-function model_τorbit(τrange, model_func, par::Union{BevHoltPar, RickerPar}, finalts)
-    dataN = Vector{Vector{Float64}}(undef, length(τrange))
-    @threads for i in eachindex(τrange)
-        local_par = deepcopy(par)
-        local_par.τ = τrange[i]
-        timeseries = model_recursion(0.1, 500, local_par, model_func)
-        dataN[i] = timeseries[end-finalts:end]
-    end
-    return [τrange,dataN]
 end
 
 function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar, RickerPar}, finalts::Int64; optτ::Int64=0, upperval::Union{Float64,Int64}=1.0)
@@ -220,7 +172,7 @@ function orbitdiagrams(model_func, paraval::String, defaultpar::Union{BevHoltPar
     return [range,dataN]
 end
 
-#Code max 0 or equilibrium point for changing tau
+## Find interior equilibrium for BevertonHolt-Constant and BH-BH models
 function BevHoltI_equi(para)
     @unpack α,β = para
     m = calc_m(para)
@@ -231,7 +183,7 @@ function BevHoltI_equi(para)
         return 0
     end
 end
-#root solve BevertonholtBevertonholt equality
+
 function BHBH_existence_check(para)
     @unpack α,β,D,C,a,b,K,τ = para
     g = calc_g(para)
@@ -274,29 +226,12 @@ function NdataBHBH(CDbetaalpha,τrange,val, defaultpara)
     return data
 end
 
-#Accessory functions
+## Accessory functions
+function abpath()
+    replace(@__DIR__, "src/julia" => "")
+end
 
-# function plot_combination(single_vector, vector_of_vectors, pointcolor)
-#     # Loop through the elements and plot the points
-#     for i in eachindex(single_vector)
-#         for y in eachindex(vector_of_vectors[i])
-#             scatter!([single_vector[i]], [vector_of_vectors[i][y]],label=false, color=pointcolor )
-#         end
-#     end
-#     plot!()
-# end
-"""
-    cleanxppautdat(file_path::String) -> DataFrame
-
-Reads and processes data from a file, returning a cleaned DataFrame.
-
-# Arguments
-- `file_path::String`: Path to the data file.
-
-# Returns
-- `DataFrame`: Cleaned DataFrame with columns `:a`, `:Lowp`, and `:PointTypeName`.
-"""
-
+# xppaut data sorting functions
 function cleanxppautdat_onepar(file_path)
     datalm = readdlm(file_path)
     data = DataFrame(datalm, [:a, :N1, :N2, :PointType1, :LineNum, :PointType2])
@@ -356,11 +291,7 @@ function flattenorbitdata(orbitdata)
     return [xaxisdata, yaxisdata]
 end
 
-function abpath()
-    replace(@__DIR__, "src/julia" => "")
-end
-
-#Calculate max and min for Neimark-Sacker
+# Calculate max and min for Neimark-Sacker
 function maxminNS(τval, arange, time, trans)
     maxdata=zeros(length(arange))
     mindata=zeros(length(arange))

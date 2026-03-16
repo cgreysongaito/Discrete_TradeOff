@@ -1,3 +1,7 @@
+### Code to build figures in:
+# "Adding a fecundity-survival trade-off to a discrete population model with maturation delay"
+# by Christopher Greyson-Gaito, Sabrina H. Streipert, Gail S.K. Wolkowicz
+
 include("packages.jl")
 include("TradeOffs_CommonCode.jl")
 
@@ -407,7 +411,6 @@ let #b) and c) panels
     annotate!([-3],[0.18],("c)", 18, "Computer Modern"))
     plot!(p1,p2,layout=(2,1), size=(325,400), left_margin=5mm)
     savefig(joinpath(abpath(), "figs/RickerConstant_apbifurcation_tauorbits.svg"))
-
 end
 
 ## Section 4.1
