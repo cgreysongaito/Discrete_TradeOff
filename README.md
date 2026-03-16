@@ -64,5 +64,5 @@ Christopher J. Greyson-Gaito<sup>*1</sup>, Sabrina H. Streipert<sup>2</sup>, Gai
 * .gitignore &ndash; file containing files and folders that git should ignore
 * LICENSE.txt &ndash; CC by 4.0 License for this repository
 * README.md &ndash; this file
-* Manifest.toml &ndash;
-* Project.toml &ndash;
+* Manifest.toml &ndash; Record of state of packages in the julia environment
+* Project.toml &ndash; Gives julia package dependencies
