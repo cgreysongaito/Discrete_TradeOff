@@ -16,7 +16,7 @@ Christopher J. Greyson-Gaito<sup>*1</sup>, Sabrina H. Streipert<sup>2</sup>, Gai
 * SHS &ndash; 0000-0002-5380-8818
 * GSKW &ndash; 0000-0002-4501-2342
 
-<!-- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5796524.svg)](https://doi.org/10.5281/zenodo.5796524) -->
+[![DOI](https://zenodo.org/badge/916301957.svg)](https://doi.org/10.5281/zenodo.19068255)
 
 ## Julia and XPPAUT scripts and datasets
 
